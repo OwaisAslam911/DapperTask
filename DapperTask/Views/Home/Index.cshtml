@@ -1,0 +1,34 @@
+﻿@model IEnumerable<DapperTask.Models.Organizations>
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<h2>Organizations</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Organization ID</th>
+            <th>Organization Name</th>
+            <th>Founded Date</th>
+            
+            <th>Phone</th>
+            <th>Location</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var organization in Model)
+        {
+            <tr>
+                <td>@organization.OrganizationId</td>
+                <td>@organization.OrganizationName</td>
+                <td>@organization.FoundedDate.ToString("yyyy-MM-dd")</td>
+                
+                <td>@organization.Phone</td>
+                <td>@organization.Location</td>
+            </tr>
+        }
+    </tbody>
+</table>
