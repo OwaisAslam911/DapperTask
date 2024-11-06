@@ -1,20 +1,4 @@
-﻿@model DapperTask.Models.DepartmentViewModel
+﻿@{
+    ViewData["Title"] = "Department Page";
+}
 
-<h2>Department Details</h2>
-<div>
-    <p><strong>Department ID:</strong> @Model.departments.DepartmentId</p>
-    <p><strong>Department Name:</strong> @Model.departments.DepartmentName</p>
-    <p><strong>Organization ID:</strong> @Model.departments.OrganizationId</p>
-    <p><strong>Updated At:</strong> @Model.departments.UpdatedAt</p>
-    <p><strong>Updated By:</strong> @Model.departments.UpdatedBy</p>
-    <p><strong>Created At:</strong> @Model.departments.CreatedAt</p>
-    <p><strong>Created By:</strong> @Model.departments.CreatedBy</p>
-</div>
-
-<h3>Available Organizations</h3>
-<ul>
-    @foreach (var organization in Model.organizations)
-    {
-        <li>@organization.OrganizationName</li>
-    }
-</ul>

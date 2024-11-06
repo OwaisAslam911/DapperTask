@@ -1,41 +1,47 @@
-﻿using DapperTask.Repositories;
+﻿
 using DapperTask.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
+using System.Data;
+using Dapper;
 
 
 namespace DapperTask.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
-        private readonly OrganizationRepository _organizationRepository;
-        private readonly DepartmentRepository _departmentRepository;
-        public HomeController(ILogger<HomeController> logger, OrganizationRepository organizationRepository,
-            DepartmentRepository departmentRepository)
+        private ILogger<HomeController> _logger;
+        private readonly IConfiguration configuration;
+
+        public HomeController(ILogger<HomeController> logger, IConfiguration configuration)
         {
             _logger = logger;
-            _organizationRepository = organizationRepository;
-            _departmentRepository = departmentRepository;
+            this.configuration = configuration;
         }
 
-        public async Task<IActionResult> Index()
+        [HttpGet]
+        public IActionResult Index()
         {
-            var organizations = await _organizationRepository.GetAllAsync();  // Fetch organizations
-            return View(organizations);  // Pass organizations to the view
-        }
-        public IActionResult Department(int departmentId)
-        {
-            var department = _organizationRepository.GetById(departmentId); // Retrieve a specific department
-            var organizations = _organizationRepository.GetAllAsync(); // Retrieve all organizations
+            var connectionString = configuration.GetConnectionString("dbcs");
 
-            var viewModel = new DepartmentViewModel
+            // Check if the connection string is retrieved successfully
+            if (string.IsNullOrEmpty(connectionString))
             {
-                departments = department,
-                organizations = (IEnumerable<Organizations>)organizations
-            };
-
-            return View(viewModel);
+                return StatusCode(500, "Connection string is not initialized.");
+            }
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+                string query = "SELECT * FROM Organizations";
+                var items = db.Query<Organizations>(query);
+                return View(items);
+            }
+        }
+        public IActionResult Department()
+        {
+          
+            return View();
         }
 
 
