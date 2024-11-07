@@ -1,0 +1,50 @@
+﻿
+@{
+    ViewData["Title"] = "OrganizationMapping";
+}
+
+<h1>OrganizationMapping</h1>
+
+<form method="post" asp-action="OrganizationMapping">
+    <div class="mb-3">
+        <label for="OrganizationId" class="form-label">Select Organization</label>
+        <select id="OrganizationId" name="OrganizationId" class="form-control">
+            <option value="">-- Select Organization --</option>
+            @foreach (var org in ViewBag.Organizations)
+            {
+                <option value="@org.OrganizationId">@org.OrganizationName</option>
+            }
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label for="DepartmentId" class="form-label">Select Department</label>
+        <select id="DepartmentId" name="DepartmentId" class="form-control">
+            <option value="">-- Select Department --</option>
+            @foreach (var dept in ViewBag.Departments)
+            {
+                <option value="@dept.DepartmentId">@dept.DepartmentName</option>
+            }
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Map Department to Organization</button>
+</form>
+<h2>Current Mappings</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Organization</th>
+            <th>Department</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var mapping in Model)
+        {
+            <tr>
+                <td>@mapping.Organizations.OrganizationName</td>
+                <td>@mapping.Departments.DepartmentName</td>
+            </tr>
+        }
+    </tbody>
+</table>
