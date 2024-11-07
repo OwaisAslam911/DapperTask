@@ -1,0 +1,117 @@
+﻿@model DapperTask.Models.FilterViewModel
+
+<div class="container">
+    <form method="post" action="@Url.Action("Filter", "Home")">
+        <div class="d-flex">
+            <!-- Organization Dropdown -->
+            <div class="me-3">
+                <label class="form-label">Organizations</label>
+                <select class="form-select" id="organizationSelect" name="selectedOrganization" required>
+                    <option value="">Select Your Organization</option>
+                    @foreach (var organization in Model.Organizations)
+                    {
+                        <option value="@organization.OrganizationId">@organization.OrganizationName</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Department Dropdown -->
+            <div class="me-3">
+                <label class="form-label">Departments</label>
+                <select class="form-select" id="departmentSelect" name="selectedDepartment" required>
+                    <option value="">Select Your Department</option>
+                    @foreach (var department in Model.Departments.Where(d => d.OrganizationId == Model.SelectedOrganization))
+                    {
+                        <option value="@department.DepartmentId">@department.DepartmentName</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Position Dropdown -->
+            <div class="me-3">
+                <label class="form-label">Positions</label>
+                <select class="form-select" id="positionSelect" name="selectedPosition" required>
+                    <option value="">Select Your Position</option>
+                    @foreach (var position in Model.Positions.Where(p => p.PositionId == Model.SelectedDepartment))
+                    {
+                        <option value="@position.PositionId">@position.PositionTitle</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Filter Button -->
+            <input type="submit" value="Filter" class="btn btn-primary" />
+        </div>
+    </form>
+</div>
+
+
+
+<div class="container">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Organization</th>
+                <th>Department</th>
+                <th>Position</th>
+                <th>Employee</th>
+                <th>Salary</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Employees != null && Model.Employees.Any())
+            {
+                foreach (var employee in Model.Employees)
+                {
+                    <tr>
+                        <td>@employee.OrganizationName</td>
+                        <td>@employee.DepartmentName</td>
+                        <td>@employee.PositionTitle</td>
+                        <td>@employee.EmployeeName</td>
+                        <td>@employee.Salary</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="5">No employees found for the selected filter criteria.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+
+@section Scripts {
+    <script>
+        // Fetch departments dynamically based on selected organization
+        $('#organizationSelect').change(function () {
+            debugger;
+            var organizationId = $(this).val();
+            if (organizationId) {
+                $.get('@Url.Action("GetDepartmentsByOrganization", "Home")', { organizationId: organizationId }, function (data) {
+                    var departmentSelect = $('#departmentSelect');
+                    departmentSelect.empty().append('<option value="">Select Your Department</option>');
+                    $.each(data, function (Filter, department) {
+                        departmentSelect.append('<option value="' + department.DepartmentId + '">' + department.DepartmentName + '</option>');
+                    });
+                });
+            }
+        });
+
+        // Fetch positions dynamically based on selected department
+        $('#departmentSelect').change(function () {
+            var departmentId = $(this).val();
+            if (departmentId) {
+                $.get('@Url.Action("GetPositionsByDepartment", "Home")', { departmentId: departmentId }, function (data) {
+                    var positionSelect = $('#positionSelect');
+                    positionSelect.empty().append('<option value="">Select Your Position</option>');
+                    $.each(data, function (Filter, position) {
+                        positionSelect.append('<option value="' + position.PositionId + '">' + position.PositionTitle + '</option>');
+                    });
+                });
+            }
+        });
+    </script>
+}
