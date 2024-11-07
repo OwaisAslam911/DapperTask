@@ -2,7 +2,7 @@
 {
     public class DepartmentViewModel
     {
-        public Departments departments { get; set; }
-        public IEnumerable<Organizations> organizations { get; set; }
+        public int DepartmentId { get; set; }
+        public string DepartmentName { get; set; }
     }
 }
