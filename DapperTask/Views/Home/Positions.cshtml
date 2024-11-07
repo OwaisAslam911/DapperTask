@@ -1,0 +1,44 @@
+﻿@model IEnumerable<DapperTask.Models.PositionsViewModel>
+
+<div class="container">
+    <form method="post">
+        <div class="mb-3">
+            <label for="exampleInputEmail1" class="form-label">Position name</label>
+            <input type="text" name="PositionTitle" id="PositionTitle" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+            
+        </div>
+
+
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+
+
+<h2>Positions</h2>
+
+<!-- Display existing positions -->
+<table class="table">
+    <thead>
+        <tr>
+            <th>Position ID</th>
+            <th>Position Title</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var position in Model)
+        {
+            <tr>
+                <td>@position.PositionId</td>
+                <td>@position.PositionTitle</td>
+                   <td>
+                      <form method="post" action="@Url.Action("DeletePosition", "Home")" onsubmit="return confirm('Are you sure you want to delete this Position?');">
+                        <input type="hidden" name="PositionId" value="@position.PositionId" />
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form> 
+                        <a asp-action="Delete" asp-route-id="@position.PositionId">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
