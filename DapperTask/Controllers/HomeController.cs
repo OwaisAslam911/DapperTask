@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using System.Data;
 using Dapper;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Data.Common;
 
 
 namespace DapperTask.Controllers
@@ -131,7 +132,27 @@ namespace DapperTask.Controllers
             return View(department);
 
         }
-       
+
+        [HttpPost]
+        public IActionResult UpdateDepartment(int DepartmentId, string DepartmentName)
+        {
+            var connectionString = configuration.GetConnectionString("dbcs");
+
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+                string updateQuery = @"
+            UPDATE Departments
+            SET DepartmentName = @DepartmentName
+            WHERE DepartmentId = @DepartmentId";
+
+                db.Execute(updateQuery, new { DepartmentId, DepartmentName });
+
+                // After updating, return to the list of departments
+                return RedirectToAction("Index");
+            }
+        }
+
+
         [HttpPost]
         public IActionResult DeleteDepartment(int DepartmentId)
         {
@@ -183,6 +204,26 @@ namespace DapperTask.Controllers
         }
 
         [HttpPost]
+        public IActionResult UpdatePosition(int PositionId, string PositionTitle)
+        {
+            var connectionString = configuration.GetConnectionString("dbcs");
+
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+                string updateQuery = @"
+            UPDATE Positions
+            SET PositionTitle = @PositionTitle
+            WHERE PositionId = @PositionId";
+
+                db.Execute(updateQuery, new { PositionId, PositionTitle });
+
+                // After updating, return to the list of positions
+                return RedirectToAction("Index");
+            }
+        }
+
+
+        [HttpPost]
         public IActionResult DeletePosition(int PositionId)
         {
             var connectionString = configuration.GetConnectionString("dbcs");
@@ -197,7 +238,7 @@ namespace DapperTask.Controllers
             }
 
         }
-
+        [HttpGet]
         public IActionResult Employees()
         {
             var connectionString = configuration.GetConnectionString("dbcs");
@@ -240,6 +281,45 @@ namespace DapperTask.Controllers
             return RedirectToAction("Employees");
 
         }
+
+        [HttpPost]
+        public IActionResult UpdateEmployee(int EmployeeId, string EmployeeName, string Email, string Phone, decimal Salary, int PositionId, int DepartmentId, int OrganizationId)
+        {
+            var connectionString = configuration.GetConnectionString("dbcs");
+
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+                string updateQuery = @"
+            UPDATE Employees
+            SET 
+                EmployeeName = @EmployeeName, 
+                Email = @Email, 
+                Phone = @Phone, 
+                Salary = @Salary, 
+                PositionId = @PositionId, 
+                DepartmentId = @DepartmentId, 
+                OrganizationId = @OrganizationId
+            WHERE EmployeeId = @EmployeeId";
+
+                db.Execute(updateQuery, new
+                {
+                    EmployeeId,
+                    EmployeeName,
+                    Email,
+                    Phone,
+                    Salary,
+                    PositionId,
+                    DepartmentId,
+                    OrganizationId
+                });
+
+
+                // After updating, return to the employee list
+                return RedirectToAction("Index");
+            }
+        }
+
+
         [HttpPost]
         public IActionResult DeleteEmployee(int EmployeeId)
         {
@@ -278,9 +358,7 @@ namespace DapperTask.Controllers
         om.Organizations = org;
         om.Departments = dep;
         return om;
-    },
-    splitOn: "OrgId,DeptId"
-).ToList();
+    },splitOn: "OrgId,DeptId").ToList();
                 ViewBag.Organizations = organizations;
                 ViewBag.Departments = departments;
                 return View(mappings);
@@ -349,6 +427,121 @@ namespace DapperTask.Controllers
             // Redirect to reload the view with updated data
             return RedirectToAction("PositionMapping");
         }
+
+        public async Task<IActionResult> Filter()
+        {
+            var connectionString = configuration.GetConnectionString("dbcs");
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+
+                var organizations = await db.QueryAsync<Organizations>("SELECT * FROM Organizations");
+                var departments = await db.QueryAsync<Departments>("SELECT * FROM Departments");
+                var positions = await db.QueryAsync<Positions>("SELECT * FROM Positions");
+
+                var viewModel = new FilterViewModel
+                {
+                    Organizations = organizations,
+                    Departments = departments,
+                    Positions = positions
+                };
+                return View(viewModel);
+            }
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> Filter(FilterViewModel filter)
+        {
+            var connectionString = configuration.GetConnectionString("dbcs");
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+                string sql = @"SELECT e.EmployeeId, e.EmployeeName, e.Salary, e.Phone, e.Email, 
+                       o.OrganizationName, d.DepartmentName, p.PositionTitle
+                       FROM Employees e
+                       JOIN Organizations o ON e.OrganizationId = o.OrganizationId
+                       JOIN Departments d ON e.DepartmentId = d.DepartmentId
+                       JOIN Positions p ON e.PositionId = p.PositionId
+                       WHERE 1 = 1"; // Base query
+
+                var parameters = new DynamicParameters();
+
+                // Add conditionally to SQL query based on filter values
+                if (filter.SelectedOrganization.HasValue)
+                {
+                    sql += " AND e.OrganizationId = @OrganizationId";
+                    parameters.Add("OrganizationId", filter.SelectedOrganization.Value);
+                }
+
+                if (filter.SelectedDepartment.HasValue)
+                {
+                    sql += " AND e.DepartmentId = @DepartmentId";
+                    parameters.Add("DepartmentId", filter.SelectedDepartment.Value);
+                }
+
+                if (filter.SelectedPosition.HasValue)
+                {
+                    sql += " AND e.PositionId = @PositionId";
+                    parameters.Add("PositionId", filter.SelectedPosition.Value);
+                }
+
+                // Execute query and get filtered employee data
+                var employees = await db.QueryAsync<EmployeeViewModel>(sql, parameters);
+
+                // Initialize Employees as an empty list if no data
+                var employeesList = employees?.ToList() ?? new List<EmployeeViewModel>();
+
+                // Get updated lists for dropdowns (Organizations, Departments, Positions)
+                var organizations = await db.QueryAsync<Organizations>("SELECT * FROM Organizations");
+                var departments = await db.QueryAsync<Departments>("SELECT * FROM Departments");
+                var positions = await db.QueryAsync<Positions>("SELECT * FROM Positions");
+
+                // Populate the view model with the filtered data
+                var viewModel = new FilterViewModel
+                {
+                    SelectedOrganization = filter.SelectedOrganization,
+                    SelectedDepartment = filter.SelectedDepartment,
+                    SelectedPosition = filter.SelectedPosition,
+                    Organizations = organizations,
+                    Departments = departments,
+                    Positions = positions,
+                    Employees = employeesList // Ensure employees are always initialized
+                };
+
+                return View("Index", viewModel);
+            }
+        }
+
+
+        [HttpGet]
+        public IActionResult GetDepartmentsByOrganization(int organizationId)
+        {
+            var connectionString = configuration.GetConnectionString("dbcs");
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+                // Query for departments based on organizationId
+                var departments = db.Query<Departments>(
+                    "SELECT * FROM Departments WHERE OrganizationId = @OrganizationId",
+                    new { OrganizationId = organizationId }).ToList();
+
+                return Json(departments); // Return departments as JSON
+            }
+        }
+
+        [HttpGet]
+        public IActionResult GetPositionsByDepartment(int departmentId)
+        {
+            var connectionString = configuration.GetConnectionString("dbcs");
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+                var positions = db.Query<Positions>(
+                    "SELECT * FROM Positions WHERE DepartmentId = @DepartmentId",
+                    new { DepartmentId = departmentId }).ToList();
+
+                return Json(positions); // Return positions as JSON
+            }
+        }
+
+
 
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
