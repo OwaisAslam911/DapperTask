@@ -1,50 +1,85 @@
-﻿﻿
-@{
-    ViewData["Title"] = "OrganizationMapping";
-}
-
-<h1>OrganizationMapping</h1>
-
-<form method="post" asp-action="OrganizationMapping">
-    <div class="mb-3">
-        <label for="OrganizationId" class="form-label">Select Organization</label>
-        <select id="OrganizationId" name="OrganizationId" class="form-control">
-            <option value="">-- Select Organization --</option>
-            @foreach (var org in ViewBag.Organizations)
-            {
-                <option value="@org.OrganizationId">@org.OrganizationName</option>
-            }
-        </select>
-    </div>
-
-    <div class="mb-3">
-        <label for="DepartmentId" class="form-label">Select Department</label>
-        <select id="DepartmentId" name="DepartmentId" class="form-control">
-            <option value="">-- Select Department --</option>
-            @foreach (var dept in ViewBag.Departments)
-            {
-                <option value="@dept.DepartmentId">@dept.DepartmentName</option>
-            }
-        </select>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Map Department to Organization</button>
-</form>
-<h2>Current Mappings</h2>
+﻿ @model IEnumerable<OrganizationMapping> 
+<h2>Organization Mappings</h2>
 <table class="table">
     <thead>
         <tr>
             <th>Organization</th>
             <th>Department</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var mapping in Model)
         {
-            <tr>
-                <td>@mapping.Organizations.OrganizationName</td>
-                <td>@mapping.Departments.DepartmentName</td>
+            <tr id="row-@mapping.mapId">
+           
+                     <td>
+                        <span class="employee-organization" id="organization-@mapping.mapId">@mapping.Organizations.OrganizationName</span>
+                        <select class="form-select update-field" id="edit-organization-@mapping.mapId" style="display:none;">
+                            <option value="">Select Organization</option>
+                        @foreach (var organization in ViewBag.Organizations)
+                        {
+                            <option value="@organization.OrganizationId">@organization.OrganizationName</option>
+                        }
+                        </select>
+                    </td>     <td>
+                    <span class="employee-organization" id="department-@mapping.mapId">@mapping.Departments.DepartmentName</span>
+                        <select class="form-select update-field" id="edit-department-@mapping.mapId" style="display:none;">
+                            <option value="">Select Organization</option>
+                        @foreach (var dept in ViewBag.Departments)
+                        {
+                            <option value="@dept.DepartmentId">@dept.DepartmentName</option>
+                        }
+                        </select>
+                    </td>
+
+              @*   <td>
+                    <span class="department-name" id="department-@mapping.mapId">@mapping.Departments.DepartmentName</span>
+                    <select id="DepartmentId" name="DepartmentId" class="form-control">
+                        <option value="">-- Select Department --</option>
+                        @foreach (var dept in ViewBag.Departments)
+                        {
+                            <option value="@dept.DepartmentId">@dept.DepartmentName</option>
+                        }
+                    </select>
+                </td>
+            *@
+                <td>
+                    <button class="btn btn-primary" onclick="editMapping(@mapping.mapId)">Edit</button>
+                    <button class="btn btn-success update-btn" style="display:none;" onclick="updateMapping(@mapping.mapId)">Update</button>
+                </td>
             </tr>
         }
-    </tbody>
+           
+    </tbody> 
 </table>
+@section Scripts {
+<script>
+    function editMapping(mappingId) {
+        // Hide span text and show the dropdowns
+        document.getElementById('organization-' + mappingId).style.display = 'none';
+        document.getElementById('edit-organization-' + mappingId).style.display = 'block';
+
+        document.getElementById('department-' + mappingId).style.display = 'none';
+        document.getElementById('edit-department-' + mappingId).style.display = 'block';
+
+        // Show Update button, hide Edit button
+        document.querySelector('#row-' + mappingId + ' .update-btn').style.display = 'block';
+        document.querySelector('#row-' + mappingId + ' .btn-primary').style.display = 'none';
+    }
+
+    function updateMapping(mappingId) {
+        // Collect updated data from the dropdowns
+        var updatedData = {
+            mapId: mappingId,
+            OrganizationId: document.getElementById('edit-organization-' + mappingId).value,
+            DepartmentId: document.getElementById('edit-department-' + mappingId).value
+        };
+
+        // Send data to the server for updating
+        $.post('@Url.Action("UpdateOrganizationMapping", "Home")', updatedData, function (response) {
+            location.reload(); // Refresh to show updated data, or update UI dynamically here
+        });
+    }
+</script>
+}
