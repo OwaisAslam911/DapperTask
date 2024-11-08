@@ -381,33 +381,25 @@ namespace DapperTask.Controllers
             return RedirectToAction("OrganizationMapping");
         }
 
-        //// POST: Update existing mapping
-        //[HttpPost]
-        //public async Task<IActionResult> UpdateMapping(int oldOrganizationId, int oldDepartmentId, int newOrganizationId, int newDepartmentId)
-        //{
-        //    var connectionString = configuration.GetConnectionString("dbcs");
-        //    using (IDbConnection db = new SqlConnection(connectionString))
-        //    {
-        //        var query = @"UPDATE OrganizationMapping 
-        //              SET OrganizationId = @newOrganizationId, DepartmentId = @newDepartmentId 
-        //              WHERE OrganizationId = @oldOrganizationId AND DepartmentId = @oldDepartmentId";
-        //        await db.ExecuteAsync(query, new { oldOrganizationId, oldDepartmentId, newOrganizationId, newDepartmentId });
-        //    }
-        //    return RedirectToAction("OrganizationMapping");
-        //}
 
-        //// POST: Delete mapping
-        //[HttpPost]
-        //public async Task<IActionResult> DeleteMapping(int organizationId, int departmentId)
-        //{
-        //    var connectionString = configuration.GetConnectionString("dbcs");
-        //    using (IDbConnection db = new SqlConnection(connectionString))
-        //    {
-        //        var query = "DELETE FROM OrganizationMapping WHERE OrganizationId = @OrganizationId AND DepartmentId = @DepartmentId";
-        //        await db.ExecuteAsync(query, new { OrganizationId = organizationId, DepartmentId = departmentId });
-        //    }
-        //    return RedirectToAction("OrganizationMapping");
-        //}
+        [HttpPost]
+        public IActionResult UpdateOrganizationMapping(int mapId, int OrganizationId, int DepartmentId)
+        {
+            var connectionString = configuration.GetConnectionString("dbcs");
+
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+                string updateQuery = "UPDATE OrganizationMapping " +
+                    "SET OrganizationId = @OrganizationId, " +
+                    "DepartmentId = @DepartmentId WHERE MapId = @MapId";
+                db.Execute(updateQuery, new { MapId = mapId, OrganizationId, DepartmentId });
+            }
+
+            return Ok(); // Respond with success status
+        }
+
+
+
 
         [HttpGet]
         public IActionResult PositionMapping()
@@ -516,6 +508,7 @@ namespace DapperTask.Controllers
                 return Json(employees);
             }
         }
+
 
         // Action to get departments by organization
         [HttpGet]
