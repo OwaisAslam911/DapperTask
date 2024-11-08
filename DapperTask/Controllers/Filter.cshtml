@@ -1,0 +1,135 @@
+﻿@{
+    ViewBag.Title = "Employee Filter";
+}
+
+<h1>Employee Filter</h1>
+
+<!-- Filter Form -->
+<form id="filterForm">
+    <div class="dropdown" style="width:100%">
+        <div class=" d-flex flex-grow-1">
+    <div >
+        <label for="organizationSelect">Organization:</label>
+        <select id="organizationSelect" class="form-select" name="SelectedOrganization">
+            <option value="">Select Organization</option>
+            @foreach (var organization in ViewBag.Organizations as SelectList)
+            {
+                <option value="@organization.Value">@organization.Text</option>
+            }
+        </select>
+    </div>
+
+    <div>
+        <label for="departmentSelect">Department:</label>
+            <select id="departmentSelect" class="form-select" name="SelectedDepartment">
+            <option value="">Select Department</option>
+            <!-- Departments will be loaded here based on Organization -->
+        </select>
+    </div>
+
+    <div>
+        <label for="positionSelect">Position:</label>
+            <select id="positionSelect" class="form-select" name="SelectedPosition">
+            <option value="">Select Position</option>
+            <!-- Positions will be loaded here based on Department -->
+        </select>
+    </div>
+
+    <button type="button" class="btn btn-primary" id="filterButton">Filter</button>
+    </div>
+    </div>
+</form>
+
+<!-- Table to display employees -->
+<table id="employeeTable" class="table">
+    <thead>
+        <tr>
+            <th>Organization</th>
+            <th>Department</th>
+            <th>Position</th>
+            <th>Employee Name</th>
+            <th>Salary</th>
+        </tr>
+    </thead>
+    <tbody id="employeeTableBody">
+        <!-- Filtered employee data will be populated here -->
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        // When the organization changes, get the corresponding departments
+        $('#organizationSelect').change(function () {
+            var organizationId = $(this).val();
+            if (organizationId) {
+                $.get('@Url.Action("GetDepartmentsByOrganization", "Home")', { organizationId: organizationId }, function (data) {
+                    var departmentSelect = $('#departmentSelect');
+                    departmentSelect.empty().append('<option value="">Select Department</option>');
+                    $.each(data, function (index, department) {
+                        departmentSelect.append('<option value="' + department.departmentId + '">' + department.departmentName + '</option>');
+                    });
+                }).fail(function () {
+                    alert("Error loading departments.");
+                });
+            } else {
+                $('#departmentSelect').empty().append('<option value="">Select Department</option>');
+            }
+        });
+
+        // When the department changes, get the corresponding positions
+        $('#departmentSelect').change(function () {
+            var departmentId = $(this).val();
+            if (departmentId) {
+                $.get('@Url.Action("GetPositionsByDepartment", "Home")', { departmentId: departmentId }, function (data) {
+                    var positionSelect = $('#positionSelect');
+                    positionSelect.empty().append('<option value="">Select Position</option>');
+                    $.each(data, function (index, position) {
+                        positionSelect.append('<option value="' + position.positionId + '">' + position.positionTitle + '</option>');
+                    });
+                }).fail(function () {
+                    alert("Error loading positions.");
+                });
+            } else {
+                $('#positionSelect').empty().append('<option value="">Select Position</option>');
+            }
+        });
+
+        // Filter employees based on selected criteria
+        $('#filterButton').click(function () {
+            var organizationId = $('#organizationSelect').val();
+            var departmentId = $('#departmentSelect').val();
+            var positionId = $('#positionSelect').val();
+
+            $.ajax({
+                url: '@Url.Action("FilterEmployees", "Home")',
+                type: 'GET',
+            data: {
+                    selectedOrganization: organizationId,
+                    selectedDepartment: departmentId,
+                    selectedPosition: positionId
+                },
+                success: function (data) {
+                    var tableBody = $('#employeeTableBody');
+                    tableBody.empty();  // Clear existing rows
+
+                    if (data && data.length > 0) {
+                        $.each(data, function (index, employee) {
+                            tableBody.append(
+                                '<tr>' +
+                                '<td>' + employee.organizationName + '</td>' +
+                                '<td>' + employee.departmentName + '</td>' +
+                                '<td>' + employee.positionTitle + '</td>' +
+                                '<td>' + employee.employeeName + '</td>' +
+                                '<td>' + employee.salary + '</td>' +
+                                '</tr>'
+                            );
+                        });
+
+                    } else {
+                        tableBody.append('<tr><td colspan="5">No employees found for the selected filter criteria.</td></tr>');
+                    }
+                }
+            });
+        });
+    </script>
+}

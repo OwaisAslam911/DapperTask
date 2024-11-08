@@ -1,0 +1,79 @@
+@model IEnumerable<DapperTask.Models.DepartmentViewModel>
+<div class="container">
+    <form method="post" >
+        <div class="mb-3">
+            <label for="exampleInputEmail1" class="form-label">Department name</label>
+            <input type="text" name="DepartmentName"  id="DepartmentName" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+            <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
+        </div>
+      
+
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+
+<h2>Departments</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Department ID</th>
+            <th>Name</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var dept in Model)
+        {
+            <tr id="row-@dept.DepartmentId">
+                <td>@dept.DepartmentId</td>
+                <td>
+                    <span class="department-name" id="name-@dept.DepartmentId">@dept.DepartmentName</span>
+                    <input type="text" class="form-control update-field" id="edit-name-@dept.DepartmentId" value="@dept.DepartmentName" style="display:none;" />
+                </td>
+                <td>
+                    <button class="btn btn-primary" onclick="editDepartment(@dept.DepartmentId)">Edit</button>
+
+                    <form method="post" action="@Url.Action("DeleteDepartment", "Home")" onsubmit="return confirm('Are you sure you want to delete this department?');">
+                        <input type="hidden" name="DepartmentId" value="@dept.DepartmentId" />
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+
+                    <button class="btn btn-success update-btn" style="display:none;" onclick="updateDepartment(@dept.DepartmentId)">Update</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        // Function to toggle Edit mode
+        function editDepartment(departmentId) {
+            // Show the input field and hide the span
+            document.getElementById('name-' + departmentId).style.display = 'none';
+            document.getElementById('edit-name-' + departmentId).style.display = 'block';
+
+            // Show the Update button and hide the Edit button
+            document.querySelector('#row-' + departmentId + ' .update-btn').style.display = 'block';
+            document.querySelector('#row-' + departmentId + ' .btn-primary').style.display = 'none';
+        }
+
+        // Function to submit updated department data
+        function updateDepartment(departmentId) {
+            // Get the updated department name
+            var updatedName = document.getElementById('edit-name-' + departmentId).value;
+
+            // Create data object to send to server
+            var updatedData = {
+                DepartmentId: departmentId,
+                DepartmentName: updatedName
+            };
+
+            // Send updated data to the controller (via form or AJAX)
+            $.post('@Url.Action("UpdateDepartment", "Home")', updatedData, function (response) {
+                // After updating, refresh the page to show updated data
+                location.reload();
+            });
+        }
+    </script>
+}

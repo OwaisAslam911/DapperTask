@@ -1,0 +1,50 @@
+﻿@model DapperTask.Models.PositionMapping
+
+<div class="container">
+    <h2>Map Positions to Departments</h2>
+
+    <form method="post" action="/Home/PositionMapping">
+        <div class="mb-3">
+            <label for="DepartmentId" class="form-label">Department</label>
+            <select id="DepartmentId" name="DepartmentId" class="form-select">
+                <option value="">Select Department</option>
+                @foreach (var department in ViewBag.Departments)
+                {
+                    <option value="@department.DepartmentId">@department.DepartmentName</option>
+                }
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="PositionId" class="form-label">Position</label>
+            <select id="PositionId" name="PositionId" class="form-select">
+                <option value="">Select Position</option>
+                @foreach (var position in ViewBag.Positions)
+                {
+                    <option value="@position.PositionId">@position.PositionTitle</option>
+                }
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Map Position</button>
+    </form>
+
+    <h3>Existing Mappings</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Department Name</th>
+                <th>Position Title</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var mapping in ViewBag.Mappings)
+            {
+                <tr>
+                    <td>@mapping.DepartmentName</td>
+                    <td>@mapping.PositionTitle</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
