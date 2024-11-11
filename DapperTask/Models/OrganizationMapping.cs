@@ -2,6 +2,7 @@
 {
     public class OrganizationMapping
     {
+        public int mapId { get; set; }
         public int OrganizationId { get; set; }
         public int DepartmentId { get; set; }
 

@@ -5,6 +5,7 @@ namespace DapperTask.Models
 {
     public class FilterViewModel
     {
+
         public int? SelectedOrganization { get; set; }
         public int? SelectedDepartment { get; set; }
         public int? SelectedPosition { get; set; }
