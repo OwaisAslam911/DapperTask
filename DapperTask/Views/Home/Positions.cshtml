@@ -1,15 +1,13 @@
 ﻿@model IEnumerable<DapperTask.Models.PositionsViewModel>
 
 <div class="container">
-    <form method="post">
+    <form id="positionForm" method="post">
         <div class="mb-3">
-            <label for="exampleInputEmail1" class="form-label">Position name</label>
-            <input type="text" name="PositionTitle" id="PositionTitle" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+            <label for="PositionName" class="form-label">Position Name</label>
+            <input type="text" name="PositionName" id="PositionName" class="form-control" required>
             
         </div>
-
-
-        <button type="submit" class="btn btn-primary">Submit</button>
+        <button type="submit" class="btn btn-primary">Add Position</button>
     </form>
 </div>
 
@@ -18,28 +16,23 @@
     <thead>
         <tr>
             <th>Position ID</th>
-            <th>Position Title</th>
+            <th>Name</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var position in Model)
+        @foreach (var pos in Model)
         {
-            <tr id="row-@position.PositionId">
-                <td>@position.PositionId</td>
+            <tr id="row-@pos.PositionId">
+                <td>@pos.PositionId</td>
                 <td>
-                    <span class="position-name" id="name-@position.PositionId">@position.PositionTitle</span>
-                    <input type="text" class="form-control update-field" id="edit-name-@position.PositionId" value="@position.PositionTitle" style="display:none;" />
+                    <span class="position-name" id="name-@pos.PositionId">@pos.PositionTitle</span>
+                    <input type="text" class="form-control update-field" id="edit-name-@pos.PositionId" value="@pos.PositionTitle" style="display:none;" />
                 </td>
                 <td>
-                    <button class="btn btn-primary" onclick="editPosition(@position.PositionId)">Edit</button>
-
-                    <form method="post" action="@Url.Action("DeletePosition", "Home")" onsubmit="return confirm('Are you sure you want to delete this position?');">
-                        <input type="hidden" name="PositionId" value="@position.PositionId" />
-                        <button type="submit" class="btn btn-danger">Delete</button>
-                    </form>
-
-                    <button class="btn btn-success update-btn" style="display:none;" onclick="updatePosition(@position.PositionId)">Update</button>
+                    <button class="btn btn-primary" onclick="editPosition(@pos.PositionId)">Edit</button>
+                    <button class="btn btn-danger" onclick="deletePosition(@pos.PositionId)">Delete</button>
+                    <button class="btn btn-success update-btn" style="display:none;" onclick="updatePosition(@pos.PositionId)">Update</button>
                 </td>
             </tr>
         }
@@ -47,34 +40,77 @@
 </table>
 
 @section Scripts {
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
-        // Function to toggle Edit mode
+        $(document).ready(function () {
+            $('#positionForm').submit(function (event) {
+                event.preventDefault(); // Prevent the default form submission
+
+                var newPosition = {
+                    PositionName: $('#PositionName').val()
+                };
+
+                $.post('@Url.Action("AddPosition", "Home")', newPosition, function (response) {
+                    if (response.success) {
+                        var newRow = `<tr id="row-${response.positionId}">
+                                                        <td>${response.positionId}</td>
+                                                        <td>
+                                                            <span class="position-name" id="name-${response.positionId}">${newPosition.PositionName}</span>
+                                                            <input type="text" class="form-control update-field" id="edit-name-${response.positionId}" value="${newPosition.PositionName}" style="display:none;" />
+                                                        </td>
+                                                        <td>
+                                                            <button class="btn btn-primary" onclick="editPosition(${response.positionId})">Edit</button>
+                                                            <button class="btn btn-danger" onclick="deletePosition(${response.positionId})">Delete</button>
+                                                            <button class="btn btn-success update-btn" style="display:none;" onclick="updatePosition(${response.positionId})">Update</button>
+                                                        </td>
+                                                    </tr>`;
+                        $('tbody').append(newRow);
+                        $('#PositionName').val(''); // Clear the input field
+                    } else {
+                        alert('Error adding position: ' + response.message);
+                    }
+                });
+            });
+        });
+
         function editPosition(positionId) {
-            // Show the input field and hide the span
             document.getElementById('name-' + positionId).style.display = 'none';
             document.getElementById('edit-name-' + positionId).style.display = 'block';
-
-            // Show the Update button and hide the Edit button
             document.querySelector('#row-' + positionId + ' .update-btn').style.display = 'block';
             document.querySelector('#row-' + positionId + ' .btn-primary').style.display = 'none';
         }
 
-        // Function to submit updated position data
         function updatePosition(positionId) {
-            // Get the updated position title
-            var updatedTitle = document.getElementById('edit-name-' + positionId).value;
+            var updatedName = document.getElementById('edit-name-' + positionId).value;
 
-            // Create data object to send to server
             var updatedData = {
                 PositionId: positionId,
-                PositionTitle: updatedTitle
+                PositionName: updatedName
             };
 
-            // Send updated data to the controller (via form or AJAX)
             $.post('@Url.Action("UpdatePosition", "Home")', updatedData, function (response) {
-                // After updating, refresh the page to show updated data
-                location.reload();
+                if (response.success) {
+                    document.getElementById('name-' + positionId).innerText = updatedName;
+                    document.getElementById('name-' + positionId).style.display = 'block';
+                    document.getElementById('edit-name-' + positionId).style.display = 'none';
+                    document.querySelector('#row-' + positionId + ' .update-btn').style.display = 'none';
+                    document.querySelector('#row-' + positionId + ' .btn-primary').style.display = 'block';
+                } else {
+                    alert('Error updating position: ' + response.message);
+                }
             });
+        }
+
+        function deletePosition(positionId) {
+            if (confirm('Are you sure you want to delete this position?')) {
+                $.post('@Url.Action("DeletePosition", "Home")', { PositionId: positionId }, function (response) {
+                    if (response.success) {
+                        $('#row-' + positionId).remove();
+                    } else {
+                        alert('Error deleting position: ' + response.message);
+                    }
+                });
+            }
         }
     </script>
 }
