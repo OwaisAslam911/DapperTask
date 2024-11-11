@@ -96,7 +96,6 @@ namespace DapperTask.Controllers
 
         }
 
-
         [HttpGet]
         public IActionResult Departments()
         {
@@ -111,69 +110,81 @@ namespace DapperTask.Controllers
             }
         }
         [HttpPost]
-        public IActionResult Departments(DepartmentViewModel department)
+        public JsonResult AddDepartment(string DepartmentName)
         {
-            if (ModelState.IsValid)
+            // Server-side validation
+            if (string.IsNullOrEmpty(DepartmentName))
             {
-                var connectionString = configuration.GetConnectionString("dbcs");
+                return Json(new { success = false, message = "Department name cannot be empty." });
+            }
 
-                using (IDbConnection db = new SqlConnection(connectionString))
+            var connectionString = configuration.GetConnectionString("dbcs");
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+                // Check if the department name already exists
+                string checkQuery = "SELECT COUNT(*) FROM Departments WHERE DepartmentName = @DepartmentName";
+                var exists = db.ExecuteScalar<int>(checkQuery, new { DepartmentName }) > 0;
+
+                if (exists)
                 {
-                    // Insert the new department into the Departments table
-                    string insertQuery = @"
-                INSERT INTO Departments (DepartmentName) 
-                VALUES (@DepartmentName)";
-
-                    // Execute the insert query with the department name
-                    db.Execute(insertQuery, department);
+                    return Json(new { success = false, message = "Department name already exists." });
                 }
 
-                // Redirect to the Departments page after successful submission
-                return RedirectToAction("Departments");
-            }
-            return View(department);
+                // Insert new department
+                string insertQuery = "INSERT INTO Departments (DepartmentName) VALUES (@DepartmentName); SELECT CAST(SCOPE_IDENTITY() AS int)";
+                var newDepartmentId = db.QuerySingle<int>(insertQuery, new { DepartmentName });
 
+                return Json(new { success = true, departmentId = newDepartmentId, departmentName = DepartmentName });
+            }
         }
 
         [HttpPost]
-        public IActionResult UpdateDepartment(int DepartmentId, string DepartmentName)
+        public JsonResult UpdateDepartment(int DepartmentId, string DepartmentName)
         {
-            var connectionString = configuration.GetConnectionString("dbcs");
+            // Server-side validation
+            if (string.IsNullOrEmpty(DepartmentName))
+            {
+                return Json(new { success = false, message = "Department name cannot be empty." });
+            }
 
+            var connectionString = configuration.GetConnectionString("dbcs");
             using (IDbConnection db = new SqlConnection(connectionString))
             {
-                string updateQuery = @"
-            UPDATE Departments
-            SET DepartmentName = @DepartmentName
-            WHERE DepartmentId = @DepartmentId";
+                // Check if the department name already exists (excluding the current department)
+                string checkQuery = "SELECT COUNT(*) FROM Departments WHERE DepartmentName = @DepartmentName AND DepartmentId != @DepartmentId";
+                var exists = db.ExecuteScalar<int>(checkQuery, new { DepartmentName, DepartmentId }) > 0;
 
+                if (exists)
+                {
+                    return Json(new { success = false, message = "Department name already exists." });
+                }
+
+                // Update the department name
+                string updateQuery = "UPDATE Departments SET DepartmentName = @DepartmentName WHERE DepartmentId = @DepartmentId";
                 db.Execute(updateQuery, new { DepartmentId, DepartmentName });
 
-                // After updating, return to the list of departments
-                return RedirectToAction("Index");
+                return Json(new { success = true });
             }
         }
 
 
         [HttpPost]
-        public IActionResult DeleteDepartment(int DepartmentId)
+        public JsonResult DeleteDepartment(int DepartmentId)
         {
             var connectionString = configuration.GetConnectionString("dbcs");
 
             using (IDbConnection db = new SqlConnection(connectionString))
             {
-                string deleteQuery = @"DELETE FROM Departments WHERE DepartmentId = @DepartmentId";
-
-                // Execute the delete query
+                string deleteQuery = "DELETE FROM Departments WHERE DepartmentId = @DepartmentId";
                 db.Execute(deleteQuery, new { DepartmentId });
 
-                // After deletion, return to the Index action to refresh the list
-                return RedirectToAction("Departments");
+                return Json(new { success = true });
             }
-
         }
-
-
+        
+        
+        
+        
         public IActionResult Positions()
         {
 
@@ -188,58 +199,58 @@ namespace DapperTask.Controllers
             }
         }
         [HttpPost]
-        public IActionResult Positions(PositionsViewModel positions)
+        public JsonResult AddPosition(Positions position)
         {
-
             var connectionString = configuration.GetConnectionString("dbcs");
 
             using (IDbConnection db = new SqlConnection(connectionString))
             {
                 string insertQuery = @"
                 INSERT INTO Positions (PositionTitle) 
-                VALUES (@PositionTitle)";
+                VALUES (@PositionTitle);
+                SELECT CAST(SCOPE_IDENTITY() as int);"; // Get the new position ID
 
-               
-                db.Execute(insertQuery, positions);
+                var positionId = db.ExecuteScalar<int>(insertQuery, position); // Insert and get the new ID
+
+                return Json(new { success = true, positionId = positionId });
             }
-            return RedirectToAction("Positions");
         }
 
+
         [HttpPost]
-        public IActionResult UpdatePosition(int PositionId, string PositionTitle)
+        public JsonResult UpdatePosition(int positionId, string positionName)
         {
             var connectionString = configuration.GetConnectionString("dbcs");
 
             using (IDbConnection db = new SqlConnection(connectionString))
             {
                 string updateQuery = @"
-            UPDATE Positions
-            SET PositionTitle = @PositionTitle
-            WHERE PositionId = @PositionId";
+                UPDATE Positions 
+                SET PositionTitle = @PositionName
+                WHERE PositionId = @PositionId";
 
-                db.Execute(updateQuery, new { PositionId, PositionTitle });
+                db.Execute(updateQuery, new { PositionId = positionId, PositionName = positionName });
 
-                // After updating, return to the list of positions
-                return RedirectToAction("Index");
+                return Json(new { success = true });
             }
         }
 
-
         [HttpPost]
-        public IActionResult DeletePosition(int PositionId)
+        public JsonResult DeletePosition(int positionId)
         {
             var connectionString = configuration.GetConnectionString("dbcs");
 
             using (IDbConnection db = new SqlConnection(connectionString))
             {
-                string deleteQuery = @"DELETE FROM Positions WHERE PositionId = @PositionId";
+                string deleteQuery = "DELETE FROM Positions WHERE PositionId = @PositionId";
+                db.Execute(deleteQuery, new { PositionId = positionId });
 
-                
-                db.Execute(deleteQuery, new { PositionId });
-                return RedirectToAction("Positions");
+                return Json(new { success = true });
             }
-
         }
+
+
+
         [HttpGet]
         public IActionResult Employees()
         {
@@ -340,66 +351,9 @@ namespace DapperTask.Controllers
 
 
 
-        [HttpGet]
-        public IActionResult OrganizationMapping()
-        {
-            var connectionString = configuration.GetConnectionString("dbcs");
-            using (IDbConnection db = new SqlConnection(connectionString))
-            {
-                var organizations = db.Query<Organizations>("SELECT * FROM Organizations").ToList();
-                var departments = db.Query<Departments>("SELECT * FROM Departments").ToList();
-                var mappings = db.Query<OrganizationMapping, Organizations, Departments, OrganizationMapping>(
-    @"SELECT om.OrganizationId, om.DepartmentId, 
-             o.OrganizationId AS OrgId, o.OrganizationName, 
-             d.DepartmentId AS DeptId, d.DepartmentName 
-      FROM OrganizationMapping om
-      INNER JOIN Organizations o ON om.OrganizationId = o.OrganizationId
-      INNER JOIN Departments d ON om.DepartmentId = d.DepartmentId",
-    (om, org, dep) =>
-    {
-        om.Organizations = org;
-        om.Departments = dep;
-        return om;
-    }, splitOn: "OrgId,DeptId").ToList();
-                ViewBag.Organizations = organizations;
-                ViewBag.Departments = departments;
-                return View(mappings);
-            }
-        }
+       
 
-        [HttpPost]
-        public IActionResult OrganizationMapping(int OrganizationId, int DepartmentId)
-        {
-            var connectionString = configuration.GetConnectionString("dbcs");
-
-            using (IDbConnection db = new SqlConnection(connectionString))
-            {
-                string insertQuery = @"INSERT INTO OrganizationMapping (OrganizationId, DepartmentId) VALUES (@OrganizationId, @DepartmentId)";
-                db.Execute(insertQuery, new { OrganizationId, DepartmentId });
-            }
-
-            return RedirectToAction("OrganizationMapping");
-        }
-
-
-        [HttpPost]
-        public IActionResult UpdateOrganizationMapping(int mapId, int OrganizationId, int DepartmentId)
-        {
-            var connectionString = configuration.GetConnectionString("dbcs");
-
-            using (IDbConnection db = new SqlConnection(connectionString))
-            {
-                string updateQuery = "UPDATE OrganizationMapping " +
-                    "SET OrganizationId = @OrganizationId, " +
-                    "DepartmentId = @DepartmentId WHERE MapId = @MapId";
-                db.Execute(updateQuery, new { MapId = mapId, OrganizationId, DepartmentId });
-            }
-
-            return Ok(); // Respond with success status
-        }
-
-
-
+        
 
         [HttpGet]
         public IActionResult PositionMapping()
@@ -408,6 +362,9 @@ namespace DapperTask.Controllers
             using (IDbConnection db = new SqlConnection(connectionString))
             {
                 // Fetch departments
+                string organizationQuery = "SELECT OrganizationId, OrganizationName FROM Organizations";
+                var organizations = db.Query<Organizations>(organizationQuery).ToList(); 
+
                 string departmentQuery = "SELECT DepartmentId, DepartmentName FROM Departments";
                 var departments = db.Query<Departments>(departmentQuery).ToList();
 
@@ -415,40 +372,92 @@ namespace DapperTask.Controllers
                 string positionQuery = "SELECT PositionId, PositionTitle FROM Positions";
                 var positions = db.Query<Positions>(positionQuery).ToList();
 
-                // Pass both lists to the view
+                var mappings = db.Query<PositionMappingViewModel>(@"
+                    SELECT pm.PostMapId, pm.OrganizationId, o.OrganizationName, pm.DepartmentId, d.DepartmentName, pm.PositionId, p.PositionTitle
+                    FROM PositionMapping pm
+                    JOIN Organizations o ON pm.OrganizationId = o.OrganizationId
+                    JOIN Departments d ON pm.DepartmentId = d.DepartmentId
+                    JOIN Positions p ON pm.PositionId = p.PositionId").ToList();
+
+                ViewBag.Organizations = organizations;
                 ViewBag.Departments = departments;
                 ViewBag.Positions = positions;
-
-                // You may also want to load existing mappings to display under the form
-                string mappingQuery = @"
-            SELECT d.DepartmentName, p.PositionTitle
-            FROM PositionMapping m
-            INNER JOIN Departments d ON m.DepartmentId = d.DepartmentId
-            INNER JOIN Positions p ON m.PositionId = p.PositionId";
-                var mappings = db.Query(mappingQuery).ToList();
                 ViewBag.Mappings = mappings;
+                
 
                 return View();
             }
         }
 
         [HttpPost]
-        public IActionResult PositionMapping(PositionMapping mapping)
+        public IActionResult AddPositionMapping(PositionMappingViewModel model)
         {
             var connectionString = configuration.GetConnectionString("dbcs");
             using (IDbConnection db = new SqlConnection(connectionString))
             {
                 string insertQuery = @"
-            INSERT INTO PositionMapping (DepartmentId, PositionId) 
-            VALUES (@DepartmentId, @PositionId)";
+            INSERT INTO PositionMappings (OrganizationId, DepartmentId, PositionId) 
+            VALUES (@OrganizationId, @DepartmentId, @PositionId)";
 
-                db.Execute(insertQuery, mapping);
+                db.Execute(insertQuery, model);
             }
 
-            // Redirect to reload the view with updated data
             return RedirectToAction("PositionMapping");
         }
 
+        [HttpPost]
+        public IActionResult UpdatePositionMapping(PositionMappingViewModel model)
+        {
+            var connectionString = configuration.GetConnectionString("dbcs");
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+                string updateQuery = @"
+            UPDATE PositionMappings
+            SET OrganizationId = @OrganizationId, DepartmentId = @DepartmentId, PositionId = @PositionId
+            WHERE PostMapId = @PostMapId";
+
+                db.Execute(updateQuery, model);
+            }
+
+            return Json(new { success = true });
+        }
+        // POST: Update Position Mapping
+        [HttpPost]
+        public JsonResult UpdatePositionMapping(PositionMapping positionMapping)
+        {
+            if (positionMapping == null || positionMapping.PostMapId == 0)
+            {
+                return Json(new { success = false, message = "Invalid data." });
+            }
+
+            var connectionString = configuration.GetConnectionString("dbcs");
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+                string updateQuery = @"
+                    UPDATE PositionMappings 
+                    SET OrganizationId = @OrganizationId, DepartmentId = @DepartmentId, PositionId = @PositionId 
+                    WHERE PostMapId = @PostMapId";
+
+                db.Execute(updateQuery, positionMapping);
+                return Json(new { success = true });
+            }
+        }
+
+        // POST: Delete Position Mapping
+        [HttpPost]
+        public JsonResult DeletePositionMapping(int postMapId)
+        {
+            var connectionString = configuration.GetConnectionString("dbcs");
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+                string deleteQuery = "DELETE FROM PositionMappings WHERE PostMapId = @PostMapId";
+                db.Execute(deleteQuery, new { PostMapId = postMapId });
+                return Json(new { success = true });
+            }
+        }
+
+
+        
         public async Task<IActionResult> Filter()
         {
             var connectionString = configuration.GetConnectionString("dbcs");
