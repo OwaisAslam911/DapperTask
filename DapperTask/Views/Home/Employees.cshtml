@@ -89,17 +89,18 @@
                     </td>
                     <td>
                         <span class="employee-position" id="position-@employee.EmployeeId">@employee.PositionTitle</span>
-                        <select class="form-select update-field" id="edit-position-@employee.EmployeeId" style="display:none;">
-                            <option value="">Select Position</option>
+                      
+                        <select class="form-select update-field" value="@employee.PositionTitle" id="edit-position-@employee.EmployeeId" style="display:none;">
                         @foreach (var position in ViewBag.Positions)
                         {
+                            <option value="">Select Position</option>
                             <option value="@position.PositionId">@position.PositionTitle</option>
                         }
                         </select>
                     </td>
                     <td>
                         <span class="employee-department" id="department-@employee.EmployeeId">@employee.DepartmentName</span>
-                        <select class="form-select update-field" id="edit-department-@employee.EmployeeId" style="display:none;">
+                    <select class="form-select update-field" id="edit-department-@employee.EmployeeId" value="@employee.DepartmentName" style="display:none;">
                             <option value="">Select Department</option>
                         @foreach (var department in ViewBag.Departments)
                         {
@@ -109,7 +110,7 @@
                     </td>
                     <td>
                         <span class="employee-organization" id="organization-@employee.EmployeeId">@employee.OrganizationName</span>
-                        <select class="form-select update-field" id="edit-organization-@employee.EmployeeId" style="display:none;">
+                        <select class="form-select update-field" value="@employee.OrganizationName" id="edit-organization-@employee.EmployeeId" style="display:none;">
                             <option value="">Select Organization</option>
                         @foreach (var organization in ViewBag.Organizations)
                         {
