@@ -8,7 +8,7 @@
         public DateTime FoundedDate { get; set; }
         public DateTime UpdatedAt { get; set; }
         public string UpdatedBy { get; set; }
-        public string CompanyEmail { get; set; }
+       
         public string Phone { get; set; }
         public string Location { get; set; }
         public DateTime CreatedAt { get; set; }
