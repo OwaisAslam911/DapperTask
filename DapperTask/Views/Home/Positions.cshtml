@@ -5,7 +5,7 @@
             <label for="PositionName" class="form-label">Department Name</label>
             <input type="text" name="PositionName" id="PositionName" class="form-control" required>
             <div class="form-text">We'll never share your data with anyone else.</div>
-            <p>@ViewBag.Exist</p>
+           
         </div>
         <button type="submit" class="btn btn-primary">Add Positions</button>
     </form>
@@ -101,8 +101,8 @@
         }
 
         function deleteDepartment(PositionId) {
-            if (confirm('Are you sure you want to delete this department?')) {
-                $.post('@Url.Action("DeleteDepartment", "Home")', { PositionId: PositionId }, function (response) {
+            if (confirm('Are you sure you want to delete this Position?')) {
+                $.post('@Url.Action("DeletePosition", "Home")', { PositionId: PositionId }, function (response) {
                     if (response.success) {
                         $('#row-' + PositionId).remove();
                     }
