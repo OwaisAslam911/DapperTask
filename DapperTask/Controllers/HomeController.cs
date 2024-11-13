@@ -376,137 +376,98 @@ namespace DapperTask.Controllers
 
         }
 
-
-
-
-
-
-
-            [HttpGet]
-        public IActionResult PositionMapping()
-        {
-            var viewModel = new PositionMappingViewModel
+       public IActionResult PositionMapping()
+    {
+            using (IDbConnection db = new SqlConnection(configuration.GetConnectionString("dbcs")))
             {
-                PositionMappings = GetPositionMappings(),
-                Organizations = GetOrganizations(),
-                Departments = GetDepartments(),
-                Positions = GetPositions()
-            };
 
-            return View(viewModel);
-        }
+                var getOrganizations = db.Query<Organizations>("Select * from Organizations").ToList();
+                ViewBag.OrganizationMapping = new SelectList(getOrganizations, "OrganizationId", "OrganizationName");
 
-        // Method to get position mappings
-        private List<PositionMappingViewModel> GetPositionMappings()
+                var getDepartment = db.Query<Departments>("Select * from Departments").ToList();
+                ViewBag.DepartmentMapping = new SelectList(getDepartment, "DepartmentId", "DepartmentName");
+
+                var getPosition = db.Query<Positions>("Select * from Positions").ToList();
+                ViewBag.PositionMapping = new SelectList(getPosition, "PositionId", "PositionTitle");
+
+            }
+            return View();
+    }
+
+    // This action returns data as JSON for AJAX calls
+    [HttpGet]
+    public IActionResult GetPositionMappings()
+    {
+        using (IDbConnection db = new SqlConnection(configuration.GetConnectionString("dbcs")))
         {
-            var connectionString = configuration.GetConnectionString("dbcs"); // Ensure this is pointing to your DB
+            var mappings = db.Query<PositionMappingViewModel>(
+                @"SELECT pm.PostMapId, 
+                     pm.OrganizationId, 
+                     o.OrganizationName, 
+                     pm.DepartmentId, 
+                     d.DepartmentName, 
+                     pm.PositionId, 
+                     p.PositionTitle 
+              FROM PositionMapping pm 
+              JOIN Organizations o ON pm.OrganizationId = o.OrganizationId 
+              JOIN Departments d ON pm.DepartmentId = d.DepartmentId 
+              JOIN Positions p ON pm.PositionId = p.PositionId").ToList();
+
+            return Json(mappings);
+        }           
+    }
+
+       public JsonResult DeleteMapping(int postMapId)
+        {
+
+            var connectionString = configuration.GetConnectionString("dbcs");
+
             using (IDbConnection db = new SqlConnection(connectionString))
-            {
-                string query = @"
-                    SELECT    pm.PostMapId, 
-    pm.OrganizationId, 
-    o.OrganizationName, 
-    pm.DepartmentId, 
-    d.DepartmentName, 
-    pm.PositionId, 
-    p.PositionTitle 
-FROM 
-    PositionMapping pm
-INNER JOIN 
-    Organizations o ON pm.OrganizationId = o.OrganizationId
-INNER JOIN 
-    Departments d ON pm.DepartmentId = d.DepartmentId
-INNER JOIN 
-    Positions p ON pm.PositionId = p.PositionId";
 
-                // Execute the query and return the list of position mappings
-                return db.Query<PositionMappingViewModel>(query).ToList();
+            {
+
+                var query = "DELETE FROM PositionMapping WHERE PostMapId = @postMapId";
+                var affectedRows = db.Execute(query, new { PostMapId = postMapId });
+
+                return Json(new { success = true });
             }
         }
 
-        // Method to get organizations
-        private List<Organizations> GetOrganizations()
+        public JsonResult CreateMapping(PositionMappingViewModel map)
         {
             var connectionString = configuration.GetConnectionString("dbcs");
+
             using (IDbConnection db = new SqlConnection(connectionString))
             {
-                string query = "SELECT OrganizationId, OrganizationName FROM Organizations";
-                return db.Query<Organizations>(query).ToList();
-            }
-        }
+                // Insert the new position mapping and get the inserted ID
+                var query = "INSERT INTO PositionMapping (OrganizationId, DepartmentId, PositionId) " +
+                            "VALUES (@OrganizationId, @DepartmentId, @PositionId); " +
+                            "SELECT CAST(SCOPE_IDENTITY() as int)";
 
-        // Method to get departments
-        private List<Departments> GetDepartments()
-        {
-            var connectionString = configuration.GetConnectionString("dbcs");
-            using (IDbConnection db = new SqlConnection(connectionString))
-            {
-                string query = "SELECT DepartmentId, DepartmentName FROM Departments";
-                return db.Query<Departments>(query).ToList();
-            }
-        }
-
-        // Method to get positions
-        private List<Positions> GetPositions()
-        {
-            var connectionString = configuration.GetConnectionString("dbcs");
-            using (IDbConnection db = new SqlConnection(connectionString))
-            {
-                string query = "SELECT PositionId, PositionTitle FROM Positions";
-                return db.Query<Positions>(query).ToList();
-            }
-        }
-
-        [HttpPost]
-            public JsonResult CreateMapping(PositionMapping positionMapping)
-            {
-                using (IDbConnection db = new SqlConnection(configuration.GetConnectionString("dbcs")))
+                // Execute the insert and retrieve the new ID
+                var newId = db.ExecuteScalar<int>(query, new
                 {
-                    var insertQuery = "INSERT INTO PositionMapping (OrganizationId, DepartmentId, PositionId) VALUES (@OrganizationId, @DepartmentId, @PositionId); SELECT CAST(SCOPE_IDENTITY() as int)";
-                    var newId = db.QuerySingle<int>(insertQuery, positionMapping);
+                    OrganizationId = map.OrganizationId,
+                    DepartmentId = map.DepartmentId,
+                    PositionId = map.PositionId
+                });
 
-                    // Retrieve the names based on the IDs
-                    var organization = db.QuerySingle<Organizations>("SELECT OrganizationName FROM Organizations WHERE OrganizationId = @OrganizationId", new { positionMapping.OrganizationId });
-                    var department = db.QuerySingle<Departments>("SELECT DepartmentName FROM Departments WHERE DepartmentId = @DepartmentId", new { positionMapping.DepartmentId });
-                    var position = db.QuerySingle<Positions>("SELECT PositionTitle FROM Positions WHERE PositionId = @PositionId", new { positionMapping.PositionId });
-
-                    // Return the full details including names
-                    return Json(new
-                    {
-                        success = true,
-                        PostMapId = newId,
-                        OrganizationName = organization.OrganizationName,
-                        DepartmentName = department.DepartmentName,
-                        PositionTitle = position.PositionTitle
-                    });
-                }
-            }
-
-            [HttpGet]
-            public JsonResult GetMappings()
-            {
-                using (IDbConnection db = new SqlConnection(configuration.GetConnectionString("dbcs")))
+                // Optionally retrieve the complete mapping record if needed
+                var newMapping = new
                 {
-                    var mappings = db.Query<PositionMappingViewModel>(
-                        @"SELECT pm.PostMapId, 
-                             pm.OrganizationId, 
-                             o.OrganizationName, 
-                             pm.DepartmentId, 
-                             d.DepartmentName, 
-                             pm.PositionId, 
-                             p.PositionTitle 
-                      FROM PositionMapping pm 
-                      JOIN Organizations o ON pm.OrganizationId = o.OrganizationId 
-                      JOIN Departments d ON pm.DepartmentId = d.DepartmentId 
-                      JOIN Positions p ON pm.PositionId = p.PositionId").ToList();
+                    PostMapId = newId,
+                    OrganizationId = map.OrganizationId,
+                    DepartmentId = map.DepartmentId,
+                    PositionId = map.PositionId
+                    // You can add more properties if needed
+                };
 
-                    return Json(mappings);
-                }
+                return Json(new { success = true, mapping = newMapping });
             }
+        }
 
 
-
-    public async Task<IActionResult> Filter()
+        public async Task<IActionResult> Filter()
         {
             var connectionString = configuration.GetConnectionString("dbcs");
             using (IDbConnection db = new SqlConnection(connectionString))
