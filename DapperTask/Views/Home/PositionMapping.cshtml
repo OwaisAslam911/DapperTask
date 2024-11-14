@@ -205,15 +205,15 @@
 <div class="container">
     <form id="positionMappingForm" method="post" >
     <label>Select Organization</label>
-    <select class="form-select" aria-label="Default select example" asp-items="ViewBag.OrganizationMapping">
+    <select class="form-select" id="OrganizationId" aria-label="Default select example" asp-items="ViewBag.OrganizationMapping">
   <option selected>Select Organization</option>
 </select>
 <label>Select Departments</label>
-    <select class="form-select" aria-label="Default select example" asp-items="ViewBag.DepartmentMapping">
+    <select class="form-select" id="DepartmentId" aria-label="Default select example" asp-items="ViewBag.DepartmentMapping">
   <option selected>Select Departments</option>
 </select>
 <label>Select Positions</label>
-    <select class="form-select" aria-label="Default select example" asp-items="ViewBag.PositionMapping">
+    <select class="form-select" id="PositionId" aria-label="Default select example" asp-items="ViewBag.PositionMapping">
   <option selected>Select Positions</option>
 </select> 
 
@@ -245,13 +245,13 @@
     
 
         // Call the fetch function on page load
-        var apiUrl = '@Url.Action("GetPositionMappings", "Home")';
-        fetchPositionMappings(apiUrl);
+        var actionUrl = '@Url.Action("GetPositionMappings", "Home")';
+        fetchPositionMappings(actionUrl);
     });
     // Function to fetch position mappings
-    function fetchPositionMappings(apiUrl) {
+    function fetchPositionMappings(actionUrl) {
         $.ajax({
-            url: apiUrl,
+            url: actionUrl,
             method: 'GET',
             success: function (data) {
                 // Clear existing table rows
@@ -261,11 +261,23 @@
                 data.forEach(function (mapping) {
                     $('#positionMappingTable').append(`
                                         <tr id="trtag_${mapping.PostMapId}">
-                                            <td><span class="orgname">${mapping.organizationName}</span></td>
-                                                <td><span class="deptname">${mapping.departmentName}</span></td>
-                                                <td><span class="postname">${mapping.positionTitle}</span></td>
-                                                    <td><button  class="btn btn-primary" onclick="editMapping(${mapping.postMapId})">Edit</button>
-                                     <button class="btn update-btn" style="display:none;" onclick="updateMapping(${mapping.postMapId})">Updatee</button>
+                                                
+                                            <td>
+                                                <span class="orgname" id="org-${mapping.postMapId}">${mapping.organizationName}</span>
+                                                 <input type="text" class="form-control update-field" id="edit-org-${mapping.postMapId}" value="${mapping.OrganizationId}" style="display:none;" />
+                                            </td>
+                                                <td><span class="deptname" id="dept-${mapping.postMapId}">${mapping.departmentName}</span>
+                                                <input type="text" class="form-control update-field" id="edit-dept-${mapping.postMapId}" value="${mapping.DepartmentId}" style="display:none;" />
+                                                </td>
+                                                <td>
+                                                <span class="postname" id="post-${mapping.postMapId}">${mapping.positionTitle}</span>
+                                                 <select class="form-select" id="edit-post-${mapping.PostMapId}" aria-label="Default select example" style="display:none;">
+                                                  <option value="${mapping.PositionId}" selected>${mapping.PositionTitle}</option>
+                                   
+                                </select>
+                                                </td>
+                                                    <td><button  class="btn btn-primary" id="row-" onclick="editMapping(${mapping.postMapId})">Edit</button>
+                                     <button class="btn update-btn" id="row-" style="display:none;" onclick="updateMapping(${mapping.postMapId})">Updatee</button>
 
                                              <button class="btn btn-danger delete-btn" onclick="deleteMapping(${mapping.postMapId})">Delete</button></td>
                                     </tr>
@@ -277,37 +289,25 @@
                 console.error("Error fetching position mappings:", error);
             }
         });
-
-
-    
     };
+
     $('#positionMappingForm').submit(function (event) {
         event.preventDefault(); // Prevent the default form submission
 
         var newMapping = {
-            OrganizationId: $('#OrganizationId').val(),
+            OrganizationId: $('#OrganizationId').val(),  
             DepartmentId: $('#DepartmentId').val(),
             PositionId: $('#PositionId').val()
         };
 
+
+
         $.post('@Url.Action("CreateMapping", "Home")', newMapping, function (response) {
             if (response.success) {
-                // Append the new mapping to the table
-                var newRow = `
-                            <tr>
-                                <td>${response.PostMapId}</td>
-                                <td>${response.OrganizationName}</td>
-                                <td>${response.DepartmentName}</td>
-                                <td>${response.PositionTitle}</td>
-                                <td>
-                                            <button class="btn btn-primary" onclick="editMapping(${mapping.postMapId})">Edit</button>
-                                           <button class="btn update-btn" style="display:none;" onclick="updateMapping(${mapping.postMapId})">Update</button>
-                                    <button class="btn btn-danger" onclick="deleteMapping(${response.postMapId})">Delete</button>
-                                </td>
-                            </tr>`;
-                $('#positionMappingTable tbody').append(newRow);
+          
                 $('#positionMappingForm')[0].reset(); // Clear form
-                fetchPositionMappings();
+                var actionUrl = '@Url.Action("GetPositionMappings", "Home")';
+                fetchPositionMappings(actionUrl);
             } else {
                 alert(response.message);
             }
@@ -320,13 +320,29 @@
                 if (response.success) {
                     // Remove the row from the table
                     $('#positionMappingTable  tr').has(`td:contains(${postMapId})`).remove();
-                    var apiUrl = '@Url.Action("GetPositionMappings", "Home")';
-                    fetchPositionMappings(apiUrl);
+                    var actionUrl = '@Url.Action("GetPositionMappings", "Home")';
+                    fetchPositionMappings(actionUrl);
                     
                 }
             });
         }
     }
+    
+     function editMapping(postMapId) {
+            document.getElementById('org-' + postMapId).style.display = 'none';
+            document.getElementById('dept-' + postMapId).style.display = 'none';
+            document.getElementById('post-' + postMapId).style.display = 'none';
+
+            document.getElementById('edit-org-' + postMapId).style.display = 'inline-block';
+            document.getElementById('edit-dept-' + postMapId).style.display = 'inline-block';
+            document.getElementById('edit-post-' + postMapId).style.display = 'inline-block';
+
+
+            document.querySelector('#row-' + postMapId + ' .update-btn').style.display = 'inline-block';
+            document.querySelector('#row-' + postMapId + ' .btn-primary').style.display = 'none';
+        }
+
+     
     
     
 

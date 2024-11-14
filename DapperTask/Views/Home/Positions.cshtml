@@ -2,8 +2,8 @@
 <div class="container">
     <form id="PositionForm" method="post">
         <div class="mb-3">
-            <label for="PositionName" class="form-label">Department Name</label>
-            <input type="text" name="PositionName" id="PositionName" class="form-control" required>
+            <label for="PositionTitle" class="form-label">Department Name</label>
+            <input type="text" name="PositionTitle" id="PositionName" class="form-control" required>
             <div class="form-text">We'll never share your data with anyone else.</div>
            
         </div>
@@ -47,16 +47,16 @@
                 event.preventDefault(); // Prevent the default form submission
 
                 var newDepartment = {
-                    PositionName: $('#PositionName').val()
+                    PositionTitle: $('#PositionName').val()
                 };
 
                 $.post('@Url.Action("AddPosition", "Home")', newDepartment, function (response) {
                     if (response.success) {
-                        var newRow = `<tr id="row-${response.PositionId}">
-                                                <td>${response.PositionId}</td>
+                        var newRow = `<tr id="row-${response.positionId}">
+                                                        <td>${response.positionId}</td>
                                                 <td>
-                                                    <span class="department-name" id="name-${response.PositionId}">${newDepartment.PositionName}</span>
-                                                    <input type="text" class="form-control update-field" id="edit-name-${response.PositionId}" value="${newDepartment.PositionName}" style="display:none;" />
+                                                    <span class="department-name" id="name-${response.PositionId}">${newDepartment.PositionTitle}</span>
+                                                            <input type="text" class="form-control update-field" id="edit-name-${response.PositionId}" value="${newDepartment.PositionTitle}" style="display:none;" />
                                                 </td>
                                                 <td>
                                                     <button class="btn btn-primary" onclick="editDepartment(${response.PositionId})">Edit</button>
@@ -64,6 +64,7 @@
                                                     <button class="btn btn-success update-btn" style="display:none;" onclick="updatePosition(${response.PositionId})">Update</button>
                                                 </td>
                                             </tr>`;
+                        debugger;
                         $('tbody').append(newRow);
                         $('#PositionName').val(''); 
                     }  else {
@@ -86,7 +87,7 @@
 
             var updatedData = {
                 PositionId: PositionId,
-                PositionName: updatedName
+                PositionTitle: updatedName
             };
 
             $.post('@Url.Action("updatePosition", "Home")', updatedData, function (response) {
