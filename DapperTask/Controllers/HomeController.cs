@@ -237,7 +237,7 @@ namespace DapperTask.Controllers
                 // Insert new department
                 string insertQuery = "INSERT INTO Positions (PositionTitle) VALUES (@PositionTitle); SELECT CAST(SCOPE_IDENTITY() AS int)";
                 var newPositionId = db.QuerySingle<int>(insertQuery, new { PositionTitle });
-                return Json(new { success = true, positionId = newPositionId, PositionTitle = PositionTitle });
+                return Json(new { success = true, positionId = newPositionId, positionTitle = PositionTitle });
 
             }
 
@@ -275,7 +275,54 @@ namespace DapperTask.Controllers
                 return Json(new { success = true });
             }
         }
+        [HttpGet]
+        public IActionResult GetEmployees()
+        {
+            var connectionString = configuration.GetConnectionString("dbcs");
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+                var query = db.Query<EmployeeViewModel>(
+                         @"
+                SELECT e.EmployeeId, e.EmployeeName, e.Phone, e.Email, e.Salary, e.Address,
+                p.PositionTitle, d.DepartmentName, o.OrganizationName 
+                FROM Employees e
+                INNER JOIN Positions p ON e.PositionId = p.PositionId
+                INNER JOIN Departments d ON e.DepartmentId = d.DepartmentId
+                INNER JOIN Organizations o ON e.OrganizationId = o.OrganizationId").ToList();
 
+                return Json(query);
+            }
+        }
+        [HttpPost]
+        public JsonResult AddEmployee(EmployeeViewModel addemp)
+        {
+            var connectionString = configuration.GetConnectionString("dbcs");
+
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+                // Insert the new position mapping and get the inserted ID
+                string insertQuery = @"
+            INSERT INTO Employees (EmployeeName, Phone, Email, PositionId, OrganizationId, DepartmentId, Salary)
+            VALUES (@EmployeeName, @Phone, @Email, @PositionId, @OrganizationId, @DepartmentId, @Salary)";
+                
+
+                //// Execute the insert and retrieve the new ID
+                var newId = db.ExecuteScalar<int>(insertQuery, new
+                {
+                    employeeName = addemp.EmployeeName,
+                    phone = addemp.Phone,
+                    email = addemp.Email,
+                    organizationId = addemp.OrganizationId,
+                    departmentId = addemp.DepartmentId,
+                    positionId = addemp.PositionId,
+                    salary = addemp.Salary
+                });
+
+         
+
+                return Json(new { success = true, emp = newId });
+            }
+        }
 
 
         [HttpGet]
@@ -301,6 +348,7 @@ namespace DapperTask.Controllers
                 return View(items);
             }
         }
+
         [HttpPost]
         public IActionResult Employees(EmployeeViewModel emp)
         {
@@ -355,7 +403,7 @@ namespace DapperTask.Controllers
 
 
                 // After updating, return to the employee list
-                return RedirectToAction("Index");
+                return RedirectToAction("Employees");
             }
         }
 
@@ -461,6 +509,7 @@ namespace DapperTask.Controllers
                     PositionId = map.PositionId
                     // You can add more properties if needed
                 };
+                
 
                 return Json(new { success = true, mapping = newMapping });
             }
