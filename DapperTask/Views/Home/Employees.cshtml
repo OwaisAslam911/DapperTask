@@ -1,231 +1,28 @@
-﻿@* @model IEnumerable<DapperTask.Models.EmployeeViewModel>
-<div class="container">
-        <div class="d-flex">
-        <div class="form">
-            <form method="post">
-                <div class="mb-3">
-                    <label for="exampleInputEmail1" class="form-label">Employee name</label>
-                    <input type="text" name="EmployeeName" id="EmployeeName" class="form-control"   aria-describedby="emailHelp">
-
-                </div>
-                <div class="mb-3">
-                    <label for="exampleInputEmail1" class="form-label"> Phone</label>
-                    <input type="text" name="Phone" id="Phone" class="form-control"   aria-describedby="emailHelp">
-
-                </div>
-                <div class="mb-3">
-                    <label for="exampleInputEmail1" class="form-label"> Email</label>
-                    <input type="text" name="Email" id="Email" class="form-control"   aria-describedby="emailHelp">
-                </div>
-                <div class="mb-3">
-                    <label for="exampleInputEmail1" class="form-label">Salary</label>
-                    <input type="text" name="Salary" id="Salary" class="form-control"   aria-describedby="emailHelp">
-                </div>
-
-
-                <button type="submit" class="btn btn-primary">Submit</button>
-            </form>
-        </div>
-        <div class="dropdowns">
-            <div class="mb-3">
-                <label for="OrganizationId" class="form-label">Organization</label>
-                <select class="form-select" id="OrganizationId" name="OrganizationId" required>
-                    <option>Select Your Organization</option>
-                    @foreach (var organization in ViewBag.Organizations)
-                    {
-                        <option value="@organization.OrganizationId">@organization.OrganizationName</option>
-                    }
-                </select>
-            </div> 
-            <div class="mb-3">
-                <label for="OrganizationId" class="form-label">Departments</label>
-                <select class="form-select" id="OrganizationId" name="OrganizationId" required>
-                    <option>Select Your Department</option>
-                    @foreach (var department in ViewBag.Departments)
-                    {
-                        <option value="@department.DepartmentId">@department.DepartmentName</option>
-                    }
-                </select>
-            </div> 
-            <div class="mb-3">
-                <label for="OrganizationId" class="form-label">Positions</label>
-                <select class="form-select" id="OrganizationId" name="OrganizationId" required>
-                    <option>Select Your Positions</option>
-                    @foreach (var position in ViewBag.Positions)
-                    {
-                        <option value="@position.PositionId">@position.PositionTitle</option>
-                    }
-                </select>
-            </div>
-        </div>
-        </div>
-   
-</div>
-
-    <!-- Employee List Table -->
-    <h2>Employees</h2>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Employee ID</th>
-                <th>Employee Name</th>
-                <th>Position Name</th>
-                <th>Department Name</th>
-                <th>Organization Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Salary</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var employee in Model)
-            {
-                <tr id="row-@employee.EmployeeId">
-                    <td>@employee.EmployeeId</td>
-                    <td>
-                        <span class="employee-name" id="name-@employee.EmployeeId">@employee.EmployeeName</span>
-                        <input type="text" class="form-control update-field" id="edit-name-@employee.EmployeeId" value="@employee.EmployeeName" style="display:none;" />
-                    </td>
-                    <td>
-                        <span class="employee-position" id="position-@employee.EmployeeId">@employee.PositionTitle</span>
-                      
-                        <select class="form-select update-field" value="@employee.PositionTitle" id="edit-position-@employee.EmployeeId" style="display:none;">
-                        @foreach (var position in ViewBag.Positions)
-                        {
-                            <option value="">Select Position</option>
-                            <option value="@position.PositionId">@position.PositionTitle</option>
-                        }
-                        </select>
-                    </td>
-                    <td>
-                        <span class="employee-department" id="department-@employee.EmployeeId">@employee.DepartmentName</span>
-                    <select class="form-select update-field" id="edit-department-@employee.EmployeeId" value="@employee.DepartmentName" style="display:none;">
-                            <option value="">Select Department</option>
-                        @foreach (var department in ViewBag.Departments)
-                        {
-                            <option value="@department.DepartmentId">@department.DepartmentName</option>
-                        }
-                        </select>
-                    </td>
-                    <td>
-                        <span class="employee-organization" id="organization-@employee.EmployeeId">@employee.OrganizationName</span>
-                        <select class="form-select update-field" value="@employee.OrganizationName" id="edit-organization-@employee.EmployeeId" style="display:none;">
-                            <option value="">Select Organization</option>
-                        @foreach (var organization in ViewBag.Organizations)
-                        {
-                            <option value="@organization.OrganizationId">@organization.OrganizationName</option>
-                        }
-                        </select>
-                    </td>
-                    <td>
-                        <span class="employee-email" id="email-@employee.EmployeeId">@employee.Email</span>
-                        <input type="email" class="form-control update-field" id="edit-email-@employee.EmployeeId" value="@employee.Email" style="display:none;" />
-                    </td>
-                    <td>
-                        <span class="employee-phone" id="phone-@employee.EmployeeId">@employee.Phone</span>
-                        <input type="text" class="form-control update-field" id="edit-phone-@employee.EmployeeId" value="@employee.Phone" style="display:none;" />
-                    </td>
-                    <td>
-                        <span class="employee-salary" id="salary-@employee.EmployeeId">@employee.Salary</span>
-                        <input type="number" class="form-control update-field" id="edit-salary-@employee.EmployeeId" value="@employee.Salary" style="display:none;" />
-                    </td>
-                    <td>
-                        <!-- Edit button -->
-                        <button class="btn btn-primary" onclick="editEmployee(@employee.EmployeeId)">Edit</button>
-
-                        <!-- Update button (hidden by default) -->
-                        <button class="btn btn-success update-btn" style="display:none;" onclick="updateEmployee(@employee.EmployeeId)">Update</button>
-
-                        <!-- Delete button -->
-                        <form method="post" action="@Url.Action("DeleteEmployee", "Home")" onsubmit="return confirm('Are you sure you want to delete this Employee?');">
-                            <input type="hidden" name="EmployeeId" value="@employee.EmployeeId" />
-                            <button type="submit" class="btn btn-danger">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
-
-@section Scripts {
-    <script>
-        // Function to toggle Edit mode
-        function editEmployee(employeeId) {
-            // Show input fields for editing and hide span
-            document.getElementById('name-' + employeeId).style.display = 'none';
-            document.getElementById('edit-name-' + employeeId).style.display = 'block';
-            
-            document.getElementById('email-' + employeeId).style.display = 'none';
-            document.getElementById('edit-email-' + employeeId).style.display = 'block';
-
-            document.getElementById('phone-' + employeeId).style.display = 'none';
-            document.getElementById('edit-phone-' + employeeId).style.display = 'block';
-
-            document.getElementById('salary-' + employeeId).style.display = 'none';
-            document.getElementById('edit-salary-' + employeeId).style.display = 'block';
-
-            // Show dropdowns for Position, Department, and Organization
-            document.getElementById('position-' + employeeId).style.display = 'none';
-            document.getElementById('edit-position-' + employeeId).style.display = 'block';
-
-            document.getElementById('department-' + employeeId).style.display = 'none';
-            document.getElementById('edit-department-' + employeeId).style.display = 'block';
-
-            document.getElementById('organization-' + employeeId).style.display = 'none';
-            document.getElementById('edit-organization-' + employeeId).style.display = 'block';
-
-            // Show Update button and hide Edit button
-            document.querySelector('#row-' + employeeId + ' .update-btn').style.display = 'block';
-            document.querySelector('#row-' + employeeId + ' .btn-primary').style.display = 'none';
-        }
-
-        // Function to submit updated employee data
-        function updateEmployee(employeeId) {
-            // Gather updated values
-            var updatedData = {
-                EmployeeId: employeeId,
-                EmployeeName: document.getElementById('edit-name-' + employeeId).value,
-                Email: document.getElementById('edit-email-' + employeeId).value,
-                Phone: document.getElementById('edit-phone-' + employeeId).value,
-                Salary: document.getElementById('edit-salary-' + employeeId).value,
-                PositionId: document.getElementById('edit-position-' + employeeId).value,
-                DepartmentId: document.getElementById('edit-department-' + employeeId).value,
-                OrganizationId: document.getElementById('edit-organization-' + employeeId).value
-            };
-
-            // Send updated data to the controller (via form or AJAX)
-            $.post('@Url.Action("UpdateEmployee", "Home")', updatedData, function (response) {
-                // After updating, refresh the page to show updated data
-                location.reload();
-            });
-        }
-    </script>
-} *@
+﻿
 
 @model IEnumerable<DapperTask.Models.EmployeeViewModel>
 <form method="post" id="AddEmployeeForm">
+    <input type="hidden" id="EmployeeId" />
     <div class="container">
         <div class="d-flex">
     <div class="cont-fluid"style="width:500px">
             <div class="mb-3">
-                <label for="exampleInputEmail1" class="form-label">Employee name</label>
-                <input type="text" name="EmployeeName" id="EmployeeName" class="form-control"   aria-describedby="emailHelp">
+                <label  class="form-label">Employee name</label>
+                    <input type="text" name="EmployeeName" id="EmployeeName" class="form-control">
 
             </div>
             <div class="mb-3">
                 <label for="exampleInputEmail1" class="form-label"> Phone</label>
-                <input type="text" name="Phone" id="Phone" class="form-control"   aria-describedby="emailHelp">
+                    <input type="text" name="Phone" id="Phone" class="form-control">
 
             </div>
             <div class="mb-3">
                 <label for="exampleInputEmail1" class="form-label"> Email</label>
-                <input type="text" name="Email" id="Email" class="form-control"   aria-describedby="emailHelp">
+                <input type="text" name="Email" id="Email" class="form-control"   >
             </div>
             <div class="mb-3">
                 <label for="exampleInputEmail1" class="form-label">Salary</label>
-                <input type="text" name="Salary" id="Salary" class="form-control"   aria-describedby="emailHelp">
+                <input type="text" name="Salary" id="Salary" class="form-control"  >
             </div>
         </div>
         <div class="dropdown " style="width:400px">
@@ -240,8 +37,8 @@
             </select>
         </div>
         <div class="mb-3">
-            <label for="OrganizationId" class="form-label">Departments</label>
-            <select class="form-select" id="DepartmentId" name="OrganizationId" required>
+                    <label for="DepartmentId" class="form-label">Departments</label>
+            <select class="form-select" id="DepartmentId" name="DepartmentId" required>
                 <option>Select Your Department</option>
                 @foreach (var department in ViewBag.Departments)
                 {
@@ -250,8 +47,8 @@
             </select>
         </div>
         <div class="mb-3">
-            <label for="OrganizationId" class="form-label">Positions</label>
-            <select class="form-select" id="PositionId" name="OrganizationId" required>
+                    <label for="PositionId" class="form-label">Positions</label>
+                    <select class="form-select" id="PositionId" name="PositionId" required>
                 <option>Select Your Positions</option>
                 @foreach (var position in ViewBag.Positions)
                 {
@@ -262,6 +59,7 @@
     </div>
     </div>
         <button type="submit" class="btn btn-primary">Add New Employee</button>
+        <button type="button" class="btn btn-secondary" id="updateButton" style="display:none;">Update</button>
     </div>
 
 
@@ -305,51 +103,31 @@
             url: actionUrl,
             method: 'GET',
             success: function (data) {
-               
+                
                 $('#emptable').empty();
-
+                
                 data.forEach(function (emp) {
                     $('#emptable').append(`
                                             <tr id="trtag_${emp.employeeId}">
 
                                                  <td>${emp.employeeId}</td>
-                                                 <td>
-                                                    <span class="empName" id="empName-${emp.employeeId}">${emp.employeeName}</span>
-                                                     <input type="text" class="form-control update-field" id="edit-empName-${emp.employeeId}" value="${emp.employeeName}" style="display:none;" />
-                                                 </td>
-                                                 <td>
-                                                 <span class="empPhone" id="empPhone-${emp.employeeId}">${emp.phone}</span>
-                                                 <input type="text" class="form-control update-field" id="edit-empName-${emp.employeeId}" value="${emp.phone}" style="display:none;" />
-                                                 </td>
-                                                 <td>
-                                                 <span class="empEmail" id="empEmail-${emp.employeeId}">${emp.email}</span>
-                                                 <input type="text" class="form-control update-field" id="edit-empName-${emp.employeeId}" value="${emp.employeeName}" style="display:none;" />
-                                                 </td>
-                                                 <td>
-                                                 <span class="empOrg" id="empOrg-${emp.employeeId}">${emp.organizationName}</span>
-                                                      <input type="text" class="form-control update-field" id="edit-empName-${emp.employeeId}" value="${emp.employeeName}" style="display:none;" />
-                                                 </td>
-                                                  <td>
-                                                  <span class="empDept" id="empDept-${emp.employeeId}">${emp.departmentName}</span>
-                                                       <input type="text" class="form-control update-field" id="edit-empName-${emp.employeeId}" value="${emp.employeeName}" style="display:none;" />
-                                                  </td>
-                                                 <td >
-                                                 <span class="empPost" id="empdept-${emp.employeeId}">${emp.positionTitle}</span>
-                                                      <input type="text" class="form-control update-field" id="edit-empName-${emp.employeeId}" value="${emp.employeeName}" style="display:none;" />
-                                                 </td>
-                                                 <td>
-                                                 <span class="empSalary" id="empSalary-${emp.employeeId}">${emp.salary}</span>
-                                                      <input type="text" class="form-control update-field" id="edit-empName-${emp.employeeId}" value="${emp.employeeName}" style="display:none;" />
-                                                 </td>
+                                                            <td data-id="${emp.employeeId}">${emp.employeeName}</td>
+                                                            <td data-id="${emp.employeeId}">${emp.phone}</td>
+                                                            <td data-id="${emp.employeeId}">${emp.email}</td>
+                                                            <td data-id="${emp.organizationId}">${emp.organizationName}</td>
+                                                             <td data-id="${emp.departmentId}">${emp.departmentName}</td>
+                                                             <td data-id="${emp.positionId}">${emp.positionTitle}</td>
+                                                                <td id="empsallary_${emp.employeeId}" data-id="${emp.employeeId}">${emp.salary}</td>
                                              <td>
-                                                 <button  class="btn btn-primary" id="row-" onclick="editMapping(${emp.employeeId})">Edit</button>
+                                                       <button  class="btn btn-primary" data-id="${emp.employeeId}" data-dep="${emp.departmentId}"
+                                                        data-name="${emp.employeeName}" data-email="${emp.email}" data-phone="${emp.phone}" data-salary="${emp.salary}"
+                                                        data-org="${emp.organizationId}" data-post="${emp.positionId}" id="update_btn">Edit</button>
+                                                     <button class="btn btn-danger delete-btn" onclick="deleteEmployee(${emp.employeeId})">Delete</button>
 
-                                                 <button class="btn update-btn" id="row-" style="display:none;" onclick="updateMapping(${emp.employeeId})">Updatee</button>
-
-                                                 <button class="btn btn-danger delete-btn" onclick="deleteMapping(${emp.employeeId})">Delete</button>
                                               </td>
-                                    `);
-                });
+                                              
+                                    `); 
+                }); 
             },
             error: function (error) {
                 console.error("Error fetching position emps:", error);
@@ -363,12 +141,13 @@
             organizationId: $('#OrganizationId').val(),
             departmentId: $('#DepartmentId').val(),
             positionId: $('#PositionId').val(),
-            employeeName: $('#Email').val(),
+            employeeName: $('#EmployeeName').val(),
             email: $('#Email').val(),
             phone: $('#Phone').val(),
             salary: $('#Salary').val()
         };
-
+                
+       
 
         $.post('@Url.Action("AddEmployee", "Home")', newEmp, function (response) {
             if (response.success) {
@@ -380,18 +159,94 @@
             }
         });
     });
-    function editMapping(postMapId) {
-        document.getElementById('org-' + postMapId).style.display = 'none';
-        document.getElementById('dept-' + postMapId).style.display = 'none';
-        document.getElementById('post-' + postMapId).style.display = 'none';
 
-        document.getElementById('edit-org-' + postMapId).style.display = 'inline-block';
-        document.getElementById('edit-dept-' + postMapId).style.display = 'inline-block';
-        document.getElementById('edit-post-' + postMapId).style.display = 'inline-block';
+    $(document).on("click", "#update_btn", function () {
+        // Store the ID of the row being edited
+
+        var showemp = $(this).data("id");
+        var showName = $(this).data("name");
+        var showemail = $(this).data("email");
+        var showsalary = $(this).data("salary");
+        var showphone = $(this).data("phone");
+        var showorg = $(this).data("org");
+        var showpost = $(this).data("post");
+        var showdept = $(this).data("dep");
+
+        $('#EmployeeId').val(showemp);
+        $('#EmployeeName').val(showName);
+        $('#Email').val(showemail);
+        $('#Phone').val(showphone);
+        $('#Salary').val(showsalary);
+        $('#OrganizationId').val(showorg);
+        $('#DepartmentId').val(showdept);
+        $('#PositionId').val(showpost);
+        $('#updateButton').show();
+        
+    });
+   
+
+    $('#updateButton').click(function () {
+        if (EmployeeId) {
+            updateEmployee(EmployeeId);
+        }
+        ;
+       
+    });
+   
+    function updateEmployee(EmployeeId) {
+     
+        var updateEmployee = {
+            EmployeeId: $("#EmployeeId").val(),
+            organizationId: $('#OrganizationId').val(),
+            departmentId: $('#DepartmentId').val(),
+            positionId: $('#PositionId').val(),
+            employeeName: $('#EmployeeName').val(),
+            email: $('#Email').val(),
+            phone: $('#Phone').val(),
+            salary: $('#Salary').val()
+        };
+                
+        
+        
+
+        $.post('@Url.Action("UpdateEmployee", "Home")', updateEmployee, function (response) {
+            if (response.success) {
+                // $("#empsallary_" + EmployeeId).text(salary);
+                // alert(response.message);
+
+                $('#AddEmployeeForm')[0].reset();
+                // EmployeeId = null;
+                $('#updateButton').hide(); 
+                
+                fetchEmployees('@Url.Action("GetEmployees", "Home")');
+            } 
+            else{
+                alert(response.message);
+
+            }
+            
+            // else {
+            //     alert(response.message);
+            // }
+        });
+    }
 
 
-        document.querySelector('#row-' + postMapId + ' .update-btn').style.display = 'inline-block';
-        document.querySelector('#row-' + postMapId + ' .btn-primary').style.display = 'none';
+
+
+
+    function deleteEmployee(employeeId) {
+        if (confirm('Are you sure you want to delete this employee?')) {
+            $.post('@Url.Action("DeleteEmployee", "Home")', { EmployeeId: employeeId }, function (response) {
+                if (response.success) {
+                    // Remove the row from the table
+                    $('#emptable  tr').has(`td:contains(${employeeId})`).remove();
+                    var actionUrl = '@Url.Action("GetPositionMappings", "Home")';
+                    fetchEmployees('@Url.Action("GetEmployee", "Home")');
+
+                }
+            });
+        }
     }
 
     </script>
