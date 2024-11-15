@@ -283,7 +283,7 @@ namespace DapperTask.Controllers
             {
                 var query = db.Query<EmployeeViewModel>(
                          @"
-                SELECT e.EmployeeId, e.EmployeeName, e.Phone, e.Email, e.Salary, e.Address,
+                SELECT e.EmployeeId, e.EmployeeName, e.Phone, e.Email, e.Salary, e.PositionId , e.OrganizationId , e.DepartmentId,
                 p.PositionTitle, d.DepartmentName, o.OrganizationName 
                 FROM Employees e
                 INNER JOIN Positions p ON e.PositionId = p.PositionId
@@ -371,7 +371,7 @@ namespace DapperTask.Controllers
         }
 
         [HttpPost]
-        public IActionResult UpdateEmployee(int EmployeeId, string EmployeeName, string Email, string Phone, decimal Salary, int PositionId, int DepartmentId, int OrganizationId)
+        public JsonResult UpdateEmployee(int EmployeeId, string EmployeeName, string Email, string Phone, decimal Salary, int PositionId, int DepartmentId, int OrganizationId)
         {
             var connectionString = configuration.GetConnectionString("dbcs");
 
@@ -401,30 +401,30 @@ namespace DapperTask.Controllers
                     OrganizationId
                 });
 
+                return Json(new { success = true });
 
-                // After updating, return to the employee list
-                return RedirectToAction("Employees");
+
             }
         }
 
 
+
         [HttpPost]
-        public IActionResult DeleteEmployee(int EmployeeId)
+        public JsonResult DeleteEmployee(int employeeId)
         {
             var connectionString = configuration.GetConnectionString("dbcs");
 
             using (IDbConnection db = new SqlConnection(connectionString))
             {
-                string deleteQuery = @"DELETE FROM Employees WHERE EmployeeId = @EmployeeId";
+                string deleteQuery = "DELETE FROM Employees WHERE EmployeeId = @EmployeeId";
+                db.Execute(deleteQuery, new { EmployeeId = employeeId });
 
-
-                db.Execute(deleteQuery, new { EmployeeId });
-                return RedirectToAction("Employees");
+                return Json(new { success = true });
             }
-
         }
 
-       public IActionResult PositionMapping()
+
+        public IActionResult PositionMapping()
     {
             using (IDbConnection db = new SqlConnection(configuration.GetConnectionString("dbcs")))
             {
@@ -516,6 +516,25 @@ namespace DapperTask.Controllers
         }
 
 
+        [HttpPost]
+        public JsonResult UpdateMapping(int postMapId,int positionId, int organizationId, int departmentId)
+        {
+            var connectionString = configuration.GetConnectionString("dbcs");
+
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+                string updateQuery = @"
+                UPDATE PositionMapping 
+                SET PositionId = @positionId, OrganizationId = @organizationId, DepartmentId = @departmentId
+                WHERE PostMapId = @PostMapId";
+
+                db.Execute(updateQuery, new { PostMapId= postMapId, PositionId = positionId, OrganizationId = organizationId, DepartmentId= departmentId });
+
+                return Json(new { success = true });
+            }
+        }
+
+
         public async Task<IActionResult> Filter()
         {
             var connectionString = configuration.GetConnectionString("dbcs");
@@ -535,80 +554,32 @@ namespace DapperTask.Controllers
         }
 
         // Action to filter employees based on selected criteria
-        [HttpGet]
-        public async Task<IActionResult> FilterEmployees(int? selectedOrganization, int? selectedDepartment, int? selectedPosition)
-        {
-            var connectionString = configuration.GetConnectionString("dbcs");
-            using (IDbConnection db = new SqlConnection(connectionString))
-            {
-                // Join Employees with Organizations, Departments, and Positions to get names
-                var sql = @"SELECT e.EmployeeId, e.EmployeeName, e.Salary, e.Phone, e.Email, 
-                           o.OrganizationName, d.DepartmentName, p.PositionTitle
-                    FROM Employees e
-                    LEFT JOIN Organizations o ON e.OrganizationId = o.OrganizationId
-                    LEFT JOIN Departments d ON e.DepartmentId = d.DepartmentId
-                    LEFT JOIN Positions p ON e.PositionId = p.PositionId
-                    WHERE 1 = 1";
+        //[HttpGet]
+        //public JsonResult FilterEmployees()
+        //{
+        //    var connectionString = configuration.GetConnectionString("dbcs");
+        //    using (IDbConnection db = new SqlConnection(connectionString))
+        //    {
+        //        // Join Employees with Organizations, Departments, and Positions to get names
+        //        var sql = @"SELECT e.EmployeeId, e.EmployeeName, e.Salary, e.Phone, e.Email, 
+        //                   o.OrganizationName, d.DepartmentName, p.PositionTitle
+        //            FROM Employees e
+        //            LEFT JOIN Organizations o ON e.OrganizationId = o.OrganizationId
+        //            LEFT JOIN Departments d ON e.DepartmentId = d.DepartmentId
+        //            LEFT JOIN Positions p ON e.PositionId = p.PositionId
+        //            WHERE 1 = 1";
 
-                // Adding conditions based on selected filters
-                var parameters = new DynamicParameters();
+        //        // Adding conditions based on selected filters
+        //        var parameters = new DynamicParameters();
 
-                if (selectedOrganization.HasValue)
-                {
-                    sql += " AND e.OrganizationId = @OrganizationId";
-                    parameters.Add("OrganizationId", selectedOrganization);
-                }
-
-                if (selectedDepartment.HasValue)
-                {
-                    sql += " AND e.DepartmentId = @DepartmentId";
-                    parameters.Add("DepartmentId", selectedDepartment);
-                }
-
-                if (selectedPosition.HasValue)
-                {
-                    sql += " AND e.PositionId = @PositionId";
-                    parameters.Add("PositionId", selectedPosition);
-                }
-
-                var employees = await db.QueryAsync<EmployeeViewModel>(sql, parameters);
-                return Json(employees);
-            }
-        }
+               
+        //        return Json(employees);
+        //    }
+        //}
 
 
-        // Action to get departments by organization
-        [HttpGet]
-        public async Task<IActionResult> GetDepartmentsByOrganization(int organizationId)
-        {
-            var connectionString = configuration.GetConnectionString("dbcs");
-            using (IDbConnection db = new SqlConnection(connectionString))
-            {
-                var departments = await db.QueryAsync<Departments>(
-                    "SELECT * FROM Departments WHERE OrganizationId = @OrganizationId",
-                    new { OrganizationId = organizationId });
-
-                return Json(departments);
-            }
-        }
-
-        // Action to get positions by department
-        [HttpGet]
-        public async Task<IActionResult> GetPositionsByDepartment(int departmentId)
-        {
-            var connectionString = configuration.GetConnectionString("dbcs");
-            using (IDbConnection db = new SqlConnection(connectionString))
-            {
-                var positions = await db.QueryAsync<Positions>(
-                    "SELECT * FROM Positions WHERE DepartmentId = @DepartmentId",
-                    new { DepartmentId = departmentId });
-
-                return Json(positions);
-            }
-        }
-    
-
-
+     
+       
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
