@@ -9,6 +9,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Data.Common;
 using Microsoft.VisualStudio.Web.CodeGeneration.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.IdentityModel.Tokens;
 
 
 
@@ -26,8 +27,12 @@ namespace DapperTask.Controllers
             this.configuration = configuration;
         }
 
+        public IActionResult Dashboard()
+        {
+            return View();
+        }
+
         [HttpGet]
-        
         public IActionResult Index()
         {
             var connectionString = configuration.GetConnectionString("dbcs");
@@ -82,6 +87,14 @@ namespace DapperTask.Controllers
             var connectionString = configuration.GetConnectionString("dbcs");
             using (IDbConnection db = new SqlConnection(connectionString))
             {
+                string checkDeptQuery = "SELECT COUNT(*) FROM Organizations WHERE OrganizationName = @OrganizationName";
+                var existingCount = db.ExecuteScalar<int>(checkDeptQuery, new { OrganizationName });
+
+                if (existingCount > 0)
+                {
+                    // Return an error response if the organization already exists
+                    return Json(new { success = false, message = "Organization already exists." });
+                }
                 // Construct your update SQL query here
                 string updateQuery = "UPDATE Organizations SET OrganizationName = @OrganizationName, Phone = @Phone, FoundedDate = @FoundedDate, Location = @Location WHERE OrganizationId = @OrganizationId";
 
@@ -122,6 +135,7 @@ namespace DapperTask.Controllers
 
             using (IDbConnection db = new SqlConnection(connectionString))
             {
+
              
                 string query = "SELECT DepartmentId, DepartmentName FROM Departments";
                 var departments = db.Query<DapperTask.Models.DepartmentViewModel>(query).ToList();
@@ -132,12 +146,15 @@ namespace DapperTask.Controllers
         [HttpPost]
         public JsonResult AddDepartment(string DepartmentName)
         {
-          
+            if (string.IsNullOrEmpty(DepartmentName))
+            {
+                return Json(new { success = false, message = "Department name cannot be empty." });
+            }
 
             var connectionString = configuration.GetConnectionString("dbcs");
             using (IDbConnection db = new SqlConnection(connectionString))
             {
-
+            
                 string checkDeptQuery = "SELECT COUNT(*) FROM Departments WHERE DepartmentName = @DepartmentName";
                 var existingCount = db.ExecuteScalar<int>(checkDeptQuery, new { DepartmentName });
 
@@ -160,6 +177,7 @@ namespace DapperTask.Controllers
         public JsonResult UpdateDepartment(int DepartmentId, string DepartmentName)
         {
             // Server-side validation
+
             if (string.IsNullOrEmpty(DepartmentName))
             {
                 return Json(new { success = false, message = "Department name cannot be empty." });
@@ -219,7 +237,10 @@ namespace DapperTask.Controllers
         [HttpPost]
         public JsonResult AddPosition(string PositionTitle)
         {
-
+            if (string.IsNullOrEmpty(PositionTitle))
+            {
+                return Json(new { success = false, message = "Position name cannot be empty." });
+            }
 
             var connectionString = configuration.GetConnectionString("dbcs");
             using (IDbConnection db = new SqlConnection(connectionString))
@@ -247,10 +268,24 @@ namespace DapperTask.Controllers
         [HttpPost]
         public JsonResult UpdatePosition(int positionId, string PositionTitle)
         {
+            if (string.IsNullOrEmpty(PositionTitle))
+            {
+                return Json(new { success = false, message = "Position name cannot be empty." });
+            }
             var connectionString = configuration.GetConnectionString("dbcs");
 
             using (IDbConnection db = new SqlConnection(connectionString))
             {
+                string checkDeptQuery = "SELECT COUNT(*) FROM Positions WHERE PositionTitle = @PositionTitle";
+                var existingCount = db.ExecuteScalar<int>(checkDeptQuery, new { PositionTitle });
+
+                if (existingCount > 0)
+                {
+                    // Return an error response if the department already exists
+                    return Json(new { success = false, message = "Position already exists." });
+                }
+
+
                 string updateQuery = @"
                 UPDATE Positions 
                 SET PositionTitle = @PositionTitle
@@ -296,10 +331,22 @@ namespace DapperTask.Controllers
         [HttpPost]
         public JsonResult AddEmployee(EmployeeViewModel addemp)
         {
+           
+
             var connectionString = configuration.GetConnectionString("dbcs");
 
             using (IDbConnection db = new SqlConnection(connectionString))
             {
+                string checkDeptQuery = "SELECT COUNT(*) FROM Employees WHERE EmployeeName = @EmployeeName";
+                var existingCount = db.ExecuteScalar<int>(checkDeptQuery, new { addemp });
+
+                if (existingCount > 0)
+                {
+                    // Return an error response if the department already exists
+                    return Json(new { success = false, message = "Employee already exists." });
+                }
+
+
                 // Insert the new position mapping and get the inserted ID
                 string insertQuery = @"
             INSERT INTO Employees (EmployeeName, Phone, Email, PositionId, OrganizationId, DepartmentId, Salary)
@@ -377,6 +424,16 @@ namespace DapperTask.Controllers
 
             using (IDbConnection db = new SqlConnection(connectionString))
             {
+                string checkDeptQuery = "SELECT COUNT(*) FROM Employees WHERE EmployeeName = @EmployeeName";
+                var existingCount = db.ExecuteScalar<int>(checkDeptQuery, new { EmployeeName });
+
+                if (existingCount > 0)
+                {
+                    // Return an error response if the department already exists
+                    return Json(new { success = false, message = "Employee already exists." });
+                }
+
+
                 string updateQuery = @"
             UPDATE Employees
             SET 
@@ -487,6 +544,15 @@ namespace DapperTask.Controllers
 
             using (IDbConnection db = new SqlConnection(connectionString))
             {
+                string checkDeptQuery = "SELECT COUNT(*) FROM PositionMapping WHERE PositionId = @PositionId And DepartmentId = @DepartmentId And OrganizationId = @OrganizationId";
+                var existingCount = db.ExecuteScalar<int>(checkDeptQuery, new { map });
+
+                if (existingCount > 0)
+                {
+                    // Return an error response if the department already exists
+                    return Json(new { success = false, message = "Mapping already exists." });
+                }
+
                 // Insert the new position mapping and get the inserted ID
                 var query = "INSERT INTO PositionMapping (OrganizationId, DepartmentId, PositionId) " +
                             "VALUES (@OrganizationId, @DepartmentId, @PositionId); " +
@@ -523,6 +589,15 @@ namespace DapperTask.Controllers
 
             using (IDbConnection db = new SqlConnection(connectionString))
             {
+                string checkDeptQuery = "SELECT COUNT(*) FROM PositionMapping WHERE PositionId = @PositionId And DepartmentId = @DepartmentId And OrganizationId = @OrganizationId";
+                var existingCount = db.ExecuteScalar<int>(checkDeptQuery, new { postMapId, positionId,organizationId,departmentId });
+
+                if (existingCount > 0)
+                {
+                    // Return an error response if the department already exists
+                    return Json(new { success = false, message = "Mapping already exists." });
+                }
+
                 string updateQuery = @"
                 UPDATE PositionMapping 
                 SET PositionId = @positionId, OrganizationId = @organizationId, DepartmentId = @departmentId
