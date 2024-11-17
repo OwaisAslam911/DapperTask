@@ -1,6 +1,8 @@
 ﻿
 
 @model IEnumerable<DapperTask.Models.EmployeeViewModel>
+
+<div class="content-body">
 <form method="post" id="AddEmployeeForm">
     <input type="hidden" id="EmployeeId" />
     <div class="container">
@@ -28,7 +30,7 @@
         <div class="dropdown " style="width:400px">
         <div class="mb-3">
             <label for="OrganizationId" class="form-label">Organization</label>
-            <select class="form-select" id="OrganizationId" name="OrganizationId" required>
+                        <select class="form-control" id="OrganizationId" name="OrganizationId" required>
                 <option>Select Your Organization</option>
                 @foreach (var organization in ViewBag.Organizations)
                 {
@@ -38,7 +40,7 @@
         </div>
         <div class="mb-3">
                     <label for="DepartmentId" class="form-label">Departments</label>
-            <select class="form-select" id="DepartmentId" name="DepartmentId" required>
+                        <select class="form-control" id="DepartmentId" name="DepartmentId" required>
                 <option>Select Your Department</option>
                 @foreach (var department in ViewBag.Departments)
                 {
@@ -48,7 +50,7 @@
         </div>
         <div class="mb-3">
                     <label for="PositionId" class="form-label">Positions</label>
-                    <select class="form-select" id="PositionId" name="PositionId" required>
+                        <select class="form-control" id="PositionId" name="PositionId" required>
                 <option>Select Your Positions</option>
                 @foreach (var position in ViewBag.Positions)
                 {
@@ -86,7 +88,7 @@
     </tbody>
 </table>
 
-
+</div>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     $(document).ready(function () {

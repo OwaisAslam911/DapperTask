@@ -1,5 +1,6 @@
 ﻿@model IEnumerable<DapperTask.Models.PositionsViewModel>
-<div class="container">
+<div class="content-body">
+<div class="container" style="width:400px">
     <form id="PositionForm" method="post">
         <div class="mb-3">
             <label for="PositionTitle" class="form-label">Position Name</label>
@@ -10,6 +11,7 @@
         <button type="submit" class="btn btn-primary">Add Positions</button>
     </form>
 </div>
+<hr />
 
 <h2>Positions</h2>
 <table class="table">
@@ -38,7 +40,7 @@
         }
     </tbody>
 </table>
-
+</div>
 @section Scripts {
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>

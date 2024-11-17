@@ -1,5 +1,6 @@
 ﻿@model IEnumerable<DapperTask.Models.Organizations>
-<div class="container">
+<div class="content-body">
+<div class="container "style="width:600px">
     <form id="organizationForm" method="post">
         <div class="mb-3">
             <label for="OrganizationName" class="form-label">Organization Name</label>
@@ -21,6 +22,7 @@
         <button type="submit" class="btn btn-primary">Add Organization</button>
     </form>
 </div>
+<hr />
 
 <h2>Organizations</h2>
 <table class="table">
@@ -64,7 +66,7 @@
         }
     </tbody>
 </table>
-
+</div>
 @section Scripts {
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
@@ -165,6 +167,8 @@
 
                     document.querySelector('#row-' + organizationId + ' .update-btn').style.display = 'none';
                     document.querySelector('#row-' + organizationId + ' .btn-primary').style.display = 'inline-block';
+                } else {
+                    alert(response.message);
                 }
             });
         }
