@@ -1,95 +1,109 @@
 ﻿@{
     ViewBag.Title = "Employee Filter";
 }
+
 <div class="content-body">
-<h1>Employee Filter</h1>
+    <h1>Employee Filter</h1>
 
-<!-- Filter Form -->
-<form id="filterForm">
-    <div class="container" style="width:500px">
-        <div>
-        <label for="organizationSelect">Organization:</label>
+    <!-- Filter Form -->
+    <form id="filterForm">
+        <div class="dropdown" style="width:100%">
+            <div class="d-flex flex-grow-1">
+                <div>
+                    <label for="organizationSelect">Organization:</label>
                     <select class="form-control" id="OrganizationId" aria-label="Default select example" asp-items="ViewBag.Organizations">
-                    <option selected>Select Organization</option>
-                </select>
-    </div>
+                        <option selected value="">Select Organization</option> <!-- Ensure value is empty -->
+                    </select>
+                </div>
 
-    <div>
-        <label for="departmentSelect">Department:</label>
+                <div>
+                    <label for="departmentSelect">Department:</label>
                     <select class="form-control" id="DepartmentId" aria-label="Default select example" asp-items="ViewBag.Departments">
-                    <option selected>Select Departments</option>
-                </select>
-    </div>
+                        <option selected value="">Select Department</option> <!-- Ensure value is empty -->
+                    </select>
+                </div>
 
-    <div>
-        <label for="positionSelect">Position:</label>
+                <div>
+                    <label for="positionSelect">Position:</label>
                     <select class="form-control" id="PositionId" aria-label="Default select example" asp-items="ViewBag.Positions">
-                    <option selected>Select Positions</option>
-                </select>
+                        <option selected value="">Select Position</option> <!-- Ensure value is empty -->
+                    </select>
+                </div>
             </div>
+            <button type="button" class="btn btn-primary" id="filterButton">Filter</button>
+        </div>
+    </form>
 
-    <button type="button" class="btn btn-primary" id="filterButton">Filter</button>
-    </div>
-</form>
-
-<!-- Table to display employees -->
-<table id="employeeTable" class="table">
-    <thead>
-        <tr>
-            <th>Organization</th>
-            <th>Department</th>
-            <th>Position</th>
-            <th>Employee Name</th>
-            <th>Salary</th>
-        </tr>
-    </thead>
-    <tbody id="employeeTableBody">
-        <!-- Filtered employee data will be populated here -->
-    </tbody>
-</table>
+    <!-- Table to display employees -->
+    <table id="employeeTable" class="table">
+        <thead>
+            <tr>
+                <th>Organization</th>
+                <th>Department</th>
+                <th>Position</th>
+                <th>Employee Name</th>
+                <th>Salary</th>
+            </tr>
+        </thead>
+        <tbody id="employeeTableBody">
+            @foreach (var item in ViewBag.defaultValues)
+            {
+                <tr>
+                    <td>@item.OrganizationName</td>
+                    <td>@item.DepartmentName</td>
+                    <td>@item.PositionTitle</td>
+                    <td>@item.EmployeeName</td>
+                    <td>@item.Salary</td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
 
-@section Scripts {
-    <script>
-        // When the organization changes, get the corresponding departments
-  
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
-        // Filter employees based on selected criteria
+<script>
+    $(document).ready(function () {
         $('#filterButton').click(function () {
-            var organizationId = $('#organizationSelect').val();
-            var departmentId = $('#departmentSelect').val();
-            var positionId = $('#positionSelect').val();
+            // Get the selected values from the dropdowns
+            var organizationId = $('#OrganizationId').val();
+            var departmentId = $('#DepartmentId').val();
+            var positionId = $('#PositionId').val();
 
+            // AJAX request to filter employees
             $.ajax({
-                url: '@Url.Action("FilterEmployees", "Home")',
+                url: '/Home/Filter', // Ensure the correct controller name
                 type: 'GET',
-            data: {
-                    selectedOrganization: organizationId,
-                    selectedDepartment: departmentId,
-                    selectedPosition: positionId
+                data: {
+                    organizationId: organizationId || null, // Send null if not selected
+                    departmentId: departmentId || null,     // Send null if not selected
+                    positionId: positionId || null           // Send null if not selected
                 },
                 success: function (data) {
-                    var tableBody = $('#employeeTableBody');
-                    tableBody.empty();  // Clear existing rows
+                    // Clear existing table body
+                    $('#employeeTableBody').empty();
 
-                    if (data && data.length > 0) {
-                        $.each(data, function (index, employee) {
-                            tableBody.append(
+                    // Populate table with filtered data
+                    if (data.length > 0) {
+                        $.each(data, function (index, item) {
+                            $('#employeeTableBody').append(
                                 '<tr>' +
-                                '<td>' + employee.organizationName + '</td>' +
-                                '<td>' + employee.departmentName + '</td>' +
-                                '<td>' + employee.positionTitle + '</td>' +
-                                '<td>' + employee.employeeName + '</td>' +
-                                '<td>' + employee.salary + '</td>' +
+                                '<td>' + item.organizationName + '</td>' +
+                                '<td>' + item.departmentName + '</td>' +
+                                '<td>' + item.positionTitle + '</td>' +
+                                '<td>' + item.employeeName + '</td>' +
+                                '<td>' + item.salary + '</td>' +
                                 '</tr>'
                             );
                         });
-
                     } else {
-                        tableBody.append('<tr><td colspan="5">No employees found for the selected filter criteria.</td></tr>');
+                        $('#employeeTableBody').append('<tr><td colspan="5">No employees found</td></tr>');
                     }
+                },
+                error: function (xhr, status, error) {
+                    alert('Error occurred while fetching data: ' + error);
                 }
             });
         });
-    </script>
-}
+    });
+</script>

@@ -32,7 +32,7 @@
             <label for="OrganizationId" class="form-label">Organization</label>
                         <select class="form-control" id="OrganizationId" name="OrganizationId" required>
                 <option>Select Your Organization</option>
-                @foreach (var organization in ViewBag.Organizations)
+                        @foreach (var organization in ViewBag.Organizations)
                 {
                     <option value="@organization.OrganizationId">@organization.OrganizationName</option>
                 }
@@ -40,7 +40,7 @@
         </div>
         <div class="mb-3">
                     <label for="DepartmentId" class="form-label">Departments</label>
-                        <select class="form-control" id="DepartmentId" name="DepartmentId" required>
+            <select class="form-control" id="DepartmentId" name="DepartmentId" required>
                 <option>Select Your Department</option>
                 @foreach (var department in ViewBag.Departments)
                 {
@@ -50,7 +50,7 @@
         </div>
         <div class="mb-3">
                     <label for="PositionId" class="form-label">Positions</label>
-                        <select class="form-control" id="PositionId" name="PositionId" required>
+                    <select class="form-control" id="PositionId" name="PositionId" required>
                 <option>Select Your Positions</option>
                 @foreach (var position in ViewBag.Positions)
                 {
@@ -68,7 +68,7 @@
    
 </form>
 
-<table class=" table">
+<table  class="table">
     <thead>
 
         <tr>
@@ -88,13 +88,16 @@
     </tbody>
 </table>
 
+
+
+
 </div>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     $(document).ready(function () {
         // Define the URL for the AJAX call
 
-
+        fetchEmployees();
         // Call the fetch function on page load
         var actionUrl = '@Url.Action("GetEmployees", "Home")';
         fetchEmployees(actionUrl);
@@ -127,12 +130,13 @@
                                                      <button class="btn btn-danger delete-btn" onclick="deleteEmployee(${emp.employeeId})">Delete</button>
 
                                               </td>
+                                              </tr>
                                               
                                     `); 
                 }); 
             },
             error: function (error) {
-                console.error("Error fetching position emps:", error);
+                console.error("Error fetching  emps:", error);
             }
         });
     };
@@ -252,3 +256,4 @@
     }
 
     </script>
+    <script src="~/DapperTask/wwwroot/template/js/datatable.js"></script>

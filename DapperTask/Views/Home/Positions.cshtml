@@ -1,20 +1,20 @@
 ﻿@model IEnumerable<DapperTask.Models.PositionsViewModel>
 <div class="content-body">
-<div class="container" style="width:400px">
+    <div class="container" style="width:400px">
+
     <form id="PositionForm" method="post">
-        <div class="mb-3">
+        <div class="mb-3" >
             <label for="PositionTitle" class="form-label">Position Name</label>
             <input type="text" name="PositionTitle" id="PositionName" class="form-control" required>
-            <div class="form-text">We'll never share your data with anyone else.</div>
+            
            
         </div>
         <button type="submit" class="btn btn-primary">Add Positions</button>
     </form>
 </div>
-<hr />
 
 <h2>Positions</h2>
-<table class="table">
+    <table class ="table table-striped table-bordered zero-configuration" id="positionTable">
     <thead>
         <tr>
             <th>Position ID</th>
@@ -23,21 +23,21 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var dept in Model)
-        {
-            <tr id="row-@dept.PositionId">
-                <td>@dept.PositionId</td>
-                <td>
-                    <span class="department-name" id="name-@dept.PositionId">@dept.PositionTitle</span>
-                    <input type="text" class="form-control update-field" id="edit-name-@dept.PositionId" value="@dept.PositionTitle" style="display:none;" />
-                </td>
-                <td>
-                    <button class="btn btn-primary" onclick="editDepartment(@dept.PositionId)">Edit</button>
-                    <button class="btn btn-danger" onclick="deleteDepartment(@dept.PositionId)">Delete</button>
-                    <button class="btn btn-success update-btn" style="display:none;" onclick="updatePosition(@dept.PositionId)">Update</button>
-                </td>
-            </tr>
-        }
+            @foreach (var dept in Model)
+            {
+                <tr id="row-@dept.PositionId">
+                    <td>@dept.PositionId</td>
+                    <td>
+                        <span class="department-name" id="name-@dept.PositionId">@dept.PositionTitle</span>
+                        <input type="text" class="form-control update-field" id="edit-name-@dept.PositionId" value="@dept.PositionTitle" style="display:none;" />
+                    </td>
+                    <td>
+                        <button class="btn btn-primary" onclick="editDepartment(@dept.PositionId)">Edit</button>
+                        <button class="btn btn-danger" onclick="deleteDepartment(@dept.PositionId)">Delete</button>
+                        <button class="btn btn-success update-btn" style="display:none;" onclick="updatePosition(@dept.PositionId)">Update</button>
+                    </td>
+                </tr>
+            }
     </tbody>
 </table>
 </div>
@@ -114,3 +114,4 @@
         }
     </script>
 }
+<script src="~/DapperTask/wwwroot/template/js/datatable.js"></script>

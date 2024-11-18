@@ -1,19 +1,19 @@
 ﻿@model IEnumerable<DapperTask.Models.PositionMappingViewModel>
 <div class="content-body">
 
-<div class="container" style="width:400px">
+<div class="container">
     <form id="positionMappingForm" method="post" >
         <input type="hidden" id="PostMapId" />
     <label>Select Organization</label>
-            <select class="form-control" id="OrganizationId" aria-label="Default select example" asp-items="ViewBag.OrganizationMapping">
+        <select class="form-control" id="OrganizationId" aria-label="Default select example" asp-items="ViewBag.OrganizationMapping">
   <option selected>Select Organization</option>
 </select>
 <label>Select Departments</label>
-            <select class="form-control" id="DepartmentId" aria-label="Default select example" asp-items="ViewBag.DepartmentMapping">
+        <select class="form-control" id="DepartmentId" aria-label="Default select example" asp-items="ViewBag.DepartmentMapping">
   <option selected>Select Departments</option>
 </select>
 <label>Select Positions</label>
-            <select class="form-control" id="PositionId" aria-label="Default select example" asp-items="ViewBag.PositionMapping">
+        <select class="form-control" id="PositionId" aria-label="Default select example" asp-items="ViewBag.PositionMapping">
   <option selected>Select Positions</option>
 </select> 
 
@@ -21,9 +21,8 @@
         <button type="button" class="btn btn-secondary" id="updateButton" style="display:none;">Update</button>
 </form>
 </div>
-<hr />
-<h2>Present Mappings</h2>
-<table  class=" table">
+
+    <table id="mappingTable" class="table table-striped table-bordered zero-configuration">
      <thead>
 
      <tr>
@@ -38,8 +37,8 @@
         
      </tbody>
  </table>
-
  </div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     $(document).ready(function () {
