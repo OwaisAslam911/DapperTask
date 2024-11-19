@@ -43,7 +43,7 @@ namespace DapperTask.Controllers
                 ViewBag.EmployeeSalaries = topEmployees.Select(e => e.Salary).ToList();
 
 
-
+                
                 var PositionQuery = "SELECT PositionId, COUNT(*) AS EmployeeCount FROM Employees GROUP BY PositionId;";
                 var positionData = db.Query<dynamic>(PositionQuery).ToList();
 
@@ -141,7 +141,11 @@ namespace DapperTask.Controllers
 
             using (IDbConnection db = new SqlConnection(connectionString))
             {
+                //var check = "select * from PositionMapping Where OrganizationId = @OrganizationId";
+
+
                 string deleteQuery = "DELETE FROM Organizations WHERE OrganizationId = @OrganizationId";
+                
                 db.Execute(deleteQuery, new { OrganizationId });
 
                 return Json(new { success = true });
@@ -651,114 +655,206 @@ namespace DapperTask.Controllers
             }
         }
 
+
+        //public async Task<IActionResult> Filter()
+        //{
+        //    var connectionString = configuration.GetConnectionString("dbcs");
+        //    using (IDbConnection db = new SqlConnection(connectionString))
+        //    {
+        //        var organizations = await db.QueryAsync<Organizations>("SELECT * FROM Organizations");
+        //        var departments = await db.QueryAsync<Departments>("SELECT * FROM Departments");
+        //        var positions = await db.QueryAsync<Positions>("SELECT * FROM Positions");
+
+        //        var defaultValues = await db.QueryAsync<dynamic>(@"
+        //    WITH RankedSalaries AS (
+        //        SELECT 
+        //            o.OrganizationName,
+        //            d.DepartmentName,
+        //            e.EmployeeName,
+        //            p.PositionTitle,
+        //            e.Salary,
+        //            ROW_NUMBER() OVER (PARTITION BY o.OrganizationId ORDER BY e.Salary DESC) AS SalaryRank
+        //        FROM Employees e
+        //        JOIN Positions p ON e.PositionId = p.PositionId
+        //        JOIN Departments d ON p.DepartmentId = d.DepartmentId
+        //        JOIN Organizations o ON e.OrganizationId = o.OrganizationId
+        //    )
+        //    SELECT 
+        //        PositionTitle,
+        //        OrganizationName,
+        //        DepartmentName,
+        //        EmployeeName,
+        //        Salary
+        //    FROM RankedSalaries
+        //    WHERE SalaryRank <= 2
+        //    ORDER BY OrganizationName, Salary DESC;");
+
+
+        //        // Pass data to the view using ViewBag
+        //        ViewBag.Organizations = new SelectList(organizations, "OrganizationId", "OrganizationName");
+        //        ViewBag.Departments = new SelectList(departments, "DepartmentId", "DepartmentName");
+        //        ViewBag.Positions = new SelectList(positions, "PositionId", "PositionTitle");
+        //        ViewBag.defaultValues = defaultValues;
+
+        //        return View();
+        //    }
+        //}
+
+
+        //[HttpGet]
+        //public JsonResult FilterEmployees(int? organizationId, int? departmentId, int? positionId)
+        //{
+        //    var connectionString = configuration.GetConnectionString("dbcs");
+        //    using (IDbConnection db = new SqlConnection(connectionString))
+        //    {
+        //        // Base SQL query
+        //        var sql = @"
+        //    SELECT 
+        //        e.EmployeeId,
+        //        e.EmployeeName, 
+        //        e.Salary,
+        //        o.OrganizationName, 
+        //        d.DepartmentName, 
+        //        p.PositionTitle 
+        //    FROM 
+        //        Employees AS e
+        //    JOIN 
+        //        Organizations AS o ON e.OrganizationId = o.OrganizationId
+        //    JOIN 
+        //        Departments AS d ON e.DepartmentId = d.DepartmentId
+        //    JOIN 
+        //        Positions AS p ON e.PositionId = p.PositionId
+        //    WHERE 
+        //        (1=1)";
+        //        var parameters = new DynamicParameters();
+
+        //        // Filter based on optional parameters
+        //        if (organizationId.HasValue)
+        //        {
+        //            sql += " AND o.OrganizationId = @OrganizationId";
+        //            parameters.Add("@OrganizationId", organizationId.Value);
+        //        }
+        //        if (departmentId.HasValue)
+        //        {
+        //            sql += " AND d.DepartmentId = @DepartmentId";
+        //            parameters.Add("@DepartmentId", departmentId.Value);
+        //        }
+        //        if (positionId.HasValue)
+        //        {
+        //            sql += " AND e.PositionId = @PositionId";
+        //            parameters.Add("@PositionId", positionId.Value);
+        //        }
+
+        //        // Group by the necessary fields
+        //        sql += @"
+        //    GROUP BY 
+        //        e.EmployeeId,
+        //        e.Salary,
+        //        e.EmployeeName, 
+        //        o.OrganizationName, 
+        //        d.DepartmentName, 
+        //        p.PositionTitle;
+        //";
+
+        //        // Execute the query
+        //        var filteredEmployees = db.Query<Employees>(sql, parameters).ToList();
+        //        return Json(filteredEmployees);
+        //    }
+        //}
+
+
+        public async Task<IActionResult> Filter()
+        {
+
+            using (IDbConnection db = new SqlConnection(configuration.GetConnectionString("dbcs")))
+            {
+
+
+                var organizations = await db.QueryAsync<Organizations>("SELECT * FROM Organizations");
+                var departments = await db.QueryAsync<Departments>("SELECT * FROM Departments");
+                var positions = await db.QueryAsync<Positions>("SELECT * FROM Positions");
+
+                ViewBag.Organizations = new SelectList(organizations, "OrganizationId", "OrganizationName");
+                ViewBag.Departments = new SelectList(departments, "DepartmentId", "DepartmentName");
+                ViewBag.Positions = new SelectList(positions, "PositionId", "PositionTitle");
+            }
+            return View();
+        }
         [HttpGet]
-        public async Task<IActionResult> Filter(int? organizationId, int? departmentId, int? positionId)
+        public async Task<IActionResult> GetFilter(int? organizationId, int? departmentId, int? positionId)
         {
             var connectionString = configuration.GetConnectionString("dbcs");
             using (IDbConnection db = new SqlConnection(connectionString))
             {
-                // If no filtering parameters are provided, get the default data
-                if (!organizationId.HasValue && !departmentId.HasValue && !positionId.HasValue)
-                {
-
-                    var organizations = await db.QueryAsync<Organizations>("SELECT * FROM Organizations");
-                    var departments = await db.QueryAsync<Departments>("SELECT * FROM Departments");
-                    var positions = await db.QueryAsync<Positions>("SELECT * FROM Positions");
-                    var defaultValues = await db.QueryAsync<dynamic>(@"
-                WITH RankedSalaries AS (
-                    SELECT 
-                        o.OrganizationName,
-                        d.DepartmentName,
-                        e.EmployeeName,
-                        p.PositionTitle,
-                        e.Salary,
-                        ROW_NUMBER() OVER (PARTITION BY o.OrganizationId ORDER BY e.Salary DESC) AS SalaryRank
-                    FROM Employees e
-                    JOIN Positions p ON e.PositionId = p.PositionId
-                    JOIN Departments d ON p.DepartmentId = d.DepartmentId
-                    JOIN Organizations o ON e.OrganizationId = o.OrganizationId
-                )
+                // Base SQL query to get average salaries by position in each department of every organization
+                var sql = @"
+            WITH AvgSalaries AS (
                 SELECT 
-                    PositionTitle,
-                    OrganizationName,
-                    DepartmentName,
-                    EmployeeName,
-                    Salary
-                FROM RankedSalaries
-                WHERE SalaryRank <= 2
-                ORDER BY OrganizationName, Salary DESC;");
-
-                    // Pass data to the view using ViewBag
-                    ViewBag.Organizations = new SelectList(organizations, "OrganizationId", "OrganizationName");
-                    ViewBag.Departments = new SelectList(departments, "DepartmentId", "DepartmentName");
-                    ViewBag.Positions = new SelectList(positions, "PositionId", "PositionTitle");
-                    ViewBag.defaultValues = defaultValues;
-
-                    return View();
-                }
-                else
-                {
-                    // Base SQL query for filtering
-                    var sql = @"
-                SELECT 
-                    e.EmployeeId,
-                    e.EmployeeName, 
-                    e.Salary,
-                    p.PositionId,
-                    d.DepartmentId,
                     o.OrganizationId,
-                    o.OrganizationName, 
-                    d.DepartmentName, 
-                    p.PositionTitle 
+                    o.OrganizationName,
+                    d.DepartmentId,
+                    d.DepartmentName,
+                    p.PositionId,
+                    p.PositionTitle,
+                    
+                    AVG(e.Salary) AS AverageSalary,
+                    ROW_NUMBER() OVER (PARTITION BY o.OrganizationId ORDER BY AVG(e.Salary) DESC) AS SalaryRank
                 FROM 
-                    Employees AS e
+                    Employees e
                 JOIN 
-                    Organizations AS o ON e.OrganizationId = o.OrganizationId
+                    Positions p ON e.PositionId = p.PositionId
                 JOIN 
-                    Departments AS d ON e.DepartmentId = d.DepartmentId
+                    Departments d ON p.DepartmentId = d.DepartmentId
                 JOIN 
-                    Positions AS p ON e.PositionId = p.PositionId
-                WHERE 
-                    (1=1)";
-
-                    var parameters = new DynamicParameters();
-
-                    // Filter based on optional parameters
-                    if (organizationId.HasValue)
-                    {
-                        sql += " AND o.OrganizationId = @OrganizationId";
-                        parameters.Add("@OrganizationId", organizationId.Value);
-                    }
-                    if (departmentId.HasValue)
-                    {
-                        sql += " AND d.DepartmentId = @DepartmentId";
-                        parameters.Add("@DepartmentId", departmentId.Value);
-                    }
-                    if (positionId.HasValue)
-                    {
-                        sql += " AND e.PositionId = @PositionId";
-                        parameters.Add("@PositionId", positionId.Value);
-                    }
-
-                    // Group by the necessary fields
-                    sql += @"
+                    Organizations o ON e.OrganizationId = o.OrganizationId
                 GROUP BY 
-                    p.PositionId,
-                    d.DepartmentId,
-                    o.OrganizationId,
-                    e.EmployeeId,
-                    e.Salary,
-                    e.EmployeeName, 
-                    o.OrganizationName, 
-                    d.DepartmentName, 
-                    p.PositionTitle;";
+                    
+                    o.OrganizationId, o.OrganizationName,
+                    d.DepartmentId, d.DepartmentName,
+                    p.PositionId, p.PositionTitle
+            )
+            SELECT 
+                OrganizationId,
+                OrganizationName,
+                DepartmentId,
+                DepartmentName,
+                PositionId,
+                PositionTitle,
+                AverageSalary
+            FROM 
+                AvgSalaries
+            WHERE 
+                SalaryRank <= 2";
+               
+                var parameters = new DynamicParameters();
 
-                    // Execute the query
-                    var filteredEmployees = await db.QueryAsync<Employees>(sql, parameters);
-                    return Json(filteredEmployees);
+                // Apply filters based on optional parameters
+                if (organizationId.HasValue)
+                {
+                    sql += " AND OrganizationId = @OrganizationId";
+                    parameters.Add("@OrganizationId", organizationId.Value);
                 }
+                if (departmentId.HasValue)
+                {
+                    sql += " AND DepartmentId = @DepartmentId";
+                    parameters.Add("@DepartmentId", departmentId.Value);
+                }
+                if (positionId.HasValue)
+                {
+                    sql += " AND PositionId = @PositionId";
+                    parameters.Add("@PositionId", positionId.Value);
+                }
+
+                
+                var result = await db.QueryAsync<EmployeeViewModel>(sql, parameters);
+
+               
+            
+
+                return Json(result);
             }
         }
+
 
 
 
