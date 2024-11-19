@@ -651,112 +651,6 @@ namespace DapperTask.Controllers
             }
         }
 
-
-        //public async Task<IActionResult> Filter()
-        //{
-        //    var connectionString = configuration.GetConnectionString("dbcs");
-        //    using (IDbConnection db = new SqlConnection(connectionString))
-        //    {
-        //        var organizations = await db.QueryAsync<Organizations>("SELECT * FROM Organizations");
-        //        var departments = await db.QueryAsync<Departments>("SELECT * FROM Departments");
-        //        var positions = await db.QueryAsync<Positions>("SELECT * FROM Positions");
-
-        //        var defaultValues = await db.QueryAsync<dynamic>(@"
-        //    WITH RankedSalaries AS (
-        //        SELECT 
-        //            o.OrganizationName,
-        //            d.DepartmentName,
-        //            e.EmployeeName,
-        //            p.PositionTitle,
-        //            e.Salary,
-        //            ROW_NUMBER() OVER (PARTITION BY o.OrganizationId ORDER BY e.Salary DESC) AS SalaryRank
-        //        FROM Employees e
-        //        JOIN Positions p ON e.PositionId = p.PositionId
-        //        JOIN Departments d ON p.DepartmentId = d.DepartmentId
-        //        JOIN Organizations o ON e.OrganizationId = o.OrganizationId
-        //    )
-        //    SELECT 
-        //        PositionTitle,
-        //        OrganizationName,
-        //        DepartmentName,
-        //        EmployeeName,
-        //        Salary
-        //    FROM RankedSalaries
-        //    WHERE SalaryRank <= 2
-        //    ORDER BY OrganizationName, Salary DESC;");
-
-
-        //        // Pass data to the view using ViewBag
-        //        ViewBag.Organizations = new SelectList(organizations, "OrganizationId", "OrganizationName");
-        //        ViewBag.Departments = new SelectList(departments, "DepartmentId", "DepartmentName");
-        //        ViewBag.Positions = new SelectList(positions, "PositionId", "PositionTitle");
-        //        ViewBag.defaultValues = defaultValues;
-
-        //        return View();
-        //    }
-        //}
-
-
-        //[HttpGet]
-        //public JsonResult FilterEmployees(int? organizationId, int? departmentId, int? positionId)
-        //{
-        //    var connectionString = configuration.GetConnectionString("dbcs");
-        //    using (IDbConnection db = new SqlConnection(connectionString))
-        //    {
-        //        // Base SQL query
-        //        var sql = @"
-        //    SELECT 
-        //        e.EmployeeId,
-        //        e.EmployeeName, 
-        //        e.Salary,
-        //        o.OrganizationName, 
-        //        d.DepartmentName, 
-        //        p.PositionTitle 
-        //    FROM 
-        //        Employees AS e
-        //    JOIN 
-        //        Organizations AS o ON e.OrganizationId = o.OrganizationId
-        //    JOIN 
-        //        Departments AS d ON e.DepartmentId = d.DepartmentId
-        //    JOIN 
-        //        Positions AS p ON e.PositionId = p.PositionId
-        //    WHERE 
-        //        (1=1)";
-        //        var parameters = new DynamicParameters();
-
-        //        // Filter based on optional parameters
-        //        if (organizationId.HasValue)
-        //        {
-        //            sql += " AND o.OrganizationId = @OrganizationId";
-        //            parameters.Add("@OrganizationId", organizationId.Value);
-        //        }
-        //        if (departmentId.HasValue)
-        //        {
-        //            sql += " AND d.DepartmentId = @DepartmentId";
-        //            parameters.Add("@DepartmentId", departmentId.Value);
-        //        }
-        //        if (positionId.HasValue)
-        //        {
-        //            sql += " AND e.PositionId = @PositionId";
-        //            parameters.Add("@PositionId", positionId.Value);
-        //        }
-
-        //        // Group by the necessary fields
-        //        sql += @"
-        //    GROUP BY 
-        //        e.EmployeeId,
-        //        e.Salary,
-        //        e.EmployeeName, 
-        //        o.OrganizationName, 
-        //        d.DepartmentName, 
-        //        p.PositionTitle;
-        //";
-
-        //        // Execute the query
-        //        var filteredEmployees = db.Query<Employees>(sql, parameters).ToList();
-        //        return Json(filteredEmployees);
-        //    }
-        //}
         [HttpGet]
         public async Task<IActionResult> Filter(int? organizationId, int? departmentId, int? positionId)
         {
@@ -766,10 +660,10 @@ namespace DapperTask.Controllers
                 // If no filtering parameters are provided, get the default data
                 if (!organizationId.HasValue && !departmentId.HasValue && !positionId.HasValue)
                 {
+
                     var organizations = await db.QueryAsync<Organizations>("SELECT * FROM Organizations");
                     var departments = await db.QueryAsync<Departments>("SELECT * FROM Departments");
                     var positions = await db.QueryAsync<Positions>("SELECT * FROM Positions");
-
                     var defaultValues = await db.QueryAsync<dynamic>(@"
                 WITH RankedSalaries AS (
                     SELECT 
@@ -810,6 +704,9 @@ namespace DapperTask.Controllers
                     e.EmployeeId,
                     e.EmployeeName, 
                     e.Salary,
+                    p.PositionId,
+                    d.DepartmentId,
+                    o.OrganizationId,
                     o.OrganizationName, 
                     d.DepartmentName, 
                     p.PositionTitle 
@@ -846,6 +743,9 @@ namespace DapperTask.Controllers
                     // Group by the necessary fields
                     sql += @"
                 GROUP BY 
+                    p.PositionId,
+                    d.DepartmentId,
+                    o.OrganizationId,
                     e.EmployeeId,
                     e.Salary,
                     e.EmployeeName, 
