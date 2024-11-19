@@ -12,21 +12,21 @@
                 <div>
                     <label for="organizationSelect">Organization:</label>
                     <select class="form-control" id="OrganizationId" aria-label="Default select example" asp-items="ViewBag.Organizations">
-                        <option selected value="">Select Organization</option> <!-- Ensure value is empty -->
+                        <option selected value="">Select Organization</option>
                     </select>
                 </div>
 
                 <div>
                     <label for="departmentSelect">Department:</label>
                     <select class="form-control" id="DepartmentId" aria-label="Default select example" asp-items="ViewBag.Departments">
-                        <option selected value="">Select Department</option> <!-- Ensure value is empty -->
+                        <option selected value="">Select Department</option>
                     </select>
                 </div>
 
                 <div>
                     <label for="positionSelect">Position:</label>
                     <select class="form-control" id="PositionId" aria-label="Default select example" asp-items="ViewBag.Positions">
-                        <option selected value="">Select Position</option> <!-- Ensure value is empty -->
+                        <option selected value="">Select Position</option>
                     </select>
                 </div>
             </div>
@@ -41,71 +41,93 @@
                 <th>Organization</th>
                 <th>Department</th>
                 <th>Position</th>
-                <th>Employee Name</th>
+                @* <th>Employee Name</th> *@
                 <th>Salary</th>
             </tr>
         </thead>
-        <tbody id="employeeTableBody">
-            @foreach (var item in ViewBag.defaultValues)
-            {
-                <tr>
-                    <td>@item.OrganizationName</td>
-                    <td>@item.DepartmentName</td>
-                    <td>@item.PositionTitle</td>
-                    <td>@item.EmployeeName</td>
-                    <td>@item.Salary</td>
-                </tr>
-            }
+        <tbody id="FilterTableBody">
+            
         </tbody>
     </table>
 </div>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-
 <script>
+    $(document).ready(function (){
+        var actionUrl = '@Url.Action("GetFilter", "Home")';
+        fetchData(actionUrl);
+    });
+    function fetchData(actionUrl){
+       $.ajax({
+            url: actionUrl,
+            method: 'GET',
+            success: function (data) {
+                debugger;
+                // Clear existing table rows
+                $('#FilterTableBody').empty();
+                debugger;
+                // Populate the table with retrieved data
+                data.forEach(function (filter) {
+                    $('#FilterTableBody').append(`
+                                            <tr id="trtag_${filter.PostMapId}">
+                                                 <td>${filter.organizationName}</td>
+                                                 <td>${filter.departmentName}</td>
+                                                 <td>${filter.positionTitle}</td>
+                                                         <td>${filter.averageSalary}</td>
+                                                 
+                                            </tr>
 
-    $(document).ready(function () {
-        $('#filterButton').click(function () {
-            debugger;
-            // Get the selected values from the dropdowns
-            var organizationId = $('#OrganizationId').val();
-            var departmentId = $('#DepartmentId').val();
-            var positionId = $('#PositionId').val();
+                                    `);
+                });
+            },
+            error: function (error) {
+                console.error("Error fetching position filters:", error);
+            }
+        });
+    }
 
-            // AJAX request to filter employees
-            $.ajax({
-                url: '/Home/Filter', // Ensure the correct controller name
-                type: 'GET',
-                data: {
-                    organizationId: organizationId || null, // Send null if not selected
-                    departmentId: departmentId || null,     // Send null if not selected
-                    positionId: positionId || null           // Send null if not selected
-                },
-                success: function (data) {
-                    // Clear existing table body
-                    $('#employeeTableBody').empty();
+    $('#filterButton').click(function () {
+        // Get selected values
+        var organizationId = $('#OrganizationId').val();
+        var departmentId = $('#DepartmentId').val();
+        var positionId = $('#PositionId').val();
 
-                    // Populate table with filtered data
-                    if (data.length > 0) {
-                        $.each(data, function (index, item) {
-                            $('#employeeTableBody').append(
-                                '<tr>' +
-                                '<td>' + item.organizationId + '</td>' +
-                                '<td>' + item.departmentId + '</td>' +
-                                '<td>' + item.positionId + '</td>' +
-                                '<td>' + item.employeeName + '</td>' +
-                                '<td>' + item.salary + '</td>' +
-                                '</tr>'
-                            );
-                        });
-                    } else {
-                        $('#employeeTableBody').append('<tr><td colspan="5">No employees found</td></tr>');
-                    }
-                },
-                error: function (xhr, status, error) {
-                    alert('Error occurred while fetching data: ' + error);
+        // Fetch filtered data
+        $.ajax({
+            url: "/Home/GetFilter",
+            method: 'GET',
+            data: {
+                organizationId: organizationId ? organizationId : null,
+                departmentId: departmentId ? departmentId : null,
+                positionId: positionId ? positionId : null
+            },
+            success: function (data) {
+                // Clear existing table rows
+                $('#FilterTableBody').empty();
+
+                // Populate the table with retrieved data
+                if (data.length > 0) {
+                    data.forEach(function (filter) {
+                        $('#FilterTableBody').append(`
+                                    <tr>
+                                        <td>${filter.organizationName}</td>
+                                        <td>${filter.departmentName}</td>
+                                        <td>${filter.positionTitle}</td>
+                                        <td>${filter.averageSalary}</td>
+                                    </tr>
+                                `);
+                    });
+                } else {
+                    $('#FilterTableBody').append('<tr><td colspan="4">No records found</td></tr>');
                 }
-            });
+            },
+            error: function (error) {
+                console.error("Error fetching employee data:", error);
+                $('#FilterTableBody').append('<tr><td colspan="4">Error fetching data</td></tr>');
+            }
         });
     });
+      
 </script>
+
+

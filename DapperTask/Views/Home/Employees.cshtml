@@ -1,4 +1,4 @@
-﻿
+﻿@* 
 
 @model IEnumerable<DapperTask.Models.EmployeeViewModel>
 
@@ -256,4 +256,173 @@
     }
 
     </script>
-    <script src="~/DapperTask/wwwroot/template/js/datatable.js"></script>
+    <script src="~/DapperTask/wwwroot/template/js/datatable.js"></script> *@
+
+    @model IEnumerable<DapperTask.Models.EmployeeViewModel>
+
+<div class="content-body">
+    <form method="post" id="AddEmployeeForm">
+        <input type="hidden" id="EmployeeId" />
+        <div class="container">
+            <div class="d-flex">
+                <div class="cont-fluid" style="width:500px">
+                    <div class="mb-3">
+                        <label class="form-label">Employee Name</label>
+                        <input type="text" name="EmployeeName" id="EmployeeName" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="Phone" class="form-label">Phone</label>
+                        <input type="text" name="Phone" id="Phone" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="Email" class="form-label">Email</label>
+                        <input type="text" name="Email" id="Email" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="Salary" class="form-label">Salary</label>
+                        <input type="text" name="Salary" id="Salary" class="form-control">
+                    </div>
+                </div>
+                <div class="dropdown" style="width:400px">
+                    <div class="mb-3">
+                        <label for="OrganizationId" class="form-label">Organization</label>
+                        <select class="form-control" id="OrganizationId" name="OrganizationId" required>
+                            <option>Select Your Organization</option>
+                            @foreach (var organization in ViewBag.Organizations)
+                            {
+                                <option value="@organization.OrganizationId">@organization.OrganizationName</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="DepartmentId" class="form-label">Departments</label>
+                        <select class="form-control" id="DepartmentId" name="DepartmentId" required>
+                            <option>Select Your Department</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="PositionId" class="form-label">Positions</label>
+                        <select class="form-control" id="PositionId" name="PositionId" required>
+                            <option>Select Your Positions</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Add New Employee</button>
+            <button type="button" class="btn btn-secondary" id="updateButton" style="display:none;">Update</button>
+        </div>
+    </form>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Organization</th>
+                <th>Department</th>
+                <th>Position</th>
+                <th>Salary</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="emptable">
+        </tbody>
+    </table>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        var actionUrl = '@Url.Action("GetEmployees", "Home")';
+        fetchEmployees(actionUrl);
+
+        // Event listener for organization selection change
+        $('#OrganizationId').change(function () {
+            var organizationId = $(this).val();
+            if (organizationId) {
+                fetchDepartments(organizationId);
+            } else {
+                $('#DepartmentId').empty().append('<option>Select Your Department</option>'); // Reset the department dropdown
+            }
+        });
+    });
+
+    function fetchDepartments(organizationId) {
+        $.ajax({
+            url: '@Url.Action("GetDepartmentsByOrganization", "Home")', // Create this action in your controller
+            method: 'GET',
+            data: { organizationId: organizationId },
+            success: function (data) {
+                $('#DepartmentId').empty().append('<option>Select Your Department</option>');
+                data.forEach(function (department) {
+                    $('#DepartmentId').append(`
+                            <option value="${department.DepartmentId}">${department.DepartmentName}</option>
+                        `);
+                });
+            },
+            error: function (error) {
+                console.error("Error fetching departments:", error);
+            }
+        });
+    }
+
+    function fetchEmployees(actionUrl) {
+        $.ajax({
+            url: actionUrl,
+            method: 'GET',
+            success: function (data) {
+                $('#emptable').empty();
+                data.forEach(function (emp) {
+                    $('#emptable').append(`
+                            <tr id="trtag_${emp.employeeId}">
+                                <td>${emp.employeeId}</td>
+                                <td data-id="${emp.employeeId}">${emp.employeeName}</td>
+                                <td data-id="${emp.employeeId}">${emp.phone}</td>
+                                <td data-id="${emp.employeeId}">${emp.email}</td>
+                                <td data-id="${emp.organizationId}">${emp.organizationName}</td>
+                                <td data-id="${emp.departmentId}">${emp.departmentName}</td>
+                                <td data-id="${emp.positionId}">${emp.positionTitle}</td>
+                                <td id="empsallary_${emp.employeeId}" data-id="${emp.employeeId}">${emp.salary}</td>
+                                <td>
+                                    <button class="btn btn-primary" data-id="${emp.employeeId}" data-dep="${emp.departmentId}"
+                                        data-name="${emp.employeeName}" data-email="${emp.email}" data-phone="${emp.phone}" data-salary="${emp.salary}"
+                                        data-org="${emp.organizationId}" data-post="${emp.positionId}" id="update_btn">Edit</button>
+                                    <button class="btn btn-danger delete-btn" onclick="deleteEmployee(${emp.employeeId})">Delete</button>
+                                </td>
+                            </tr>
+                        `);
+                });
+            },
+            error: function (error) {
+                console.error("Error fetching employees:", error);
+            }
+        });
+    }
+
+    $('#AddEmployeeForm').submit(function (event) {
+        event.preventDefault();
+
+        var newEmp = {
+            organizationId: $('#OrganizationId').val(),
+            departmentId: $('#DepartmentId').val(),
+            positionId: $('#PositionId').val(),
+            employeeName: $('#EmployeeName').val(),
+            email: $('#Email').val(),
+            phone: $('#Phone').val(),
+            salary: $('#Salary').val()
+        };
+
+        $.post('@Url.Action("AddEmployee", "Home")', newEmp, function (response) {
+            if (response.success) {
+                $('#AddEmployeeForm')[0].reset(); // Clear form
+                fetchEmployees('@Url.Action("GetEmployees", "Home")'); // Refresh employee list
+            } else {
+                alert(response.message);
+            }
+        });
+    });
+
+    // The rest of your existing JavaScript code (update and delete functions) goes here...
+</script>
