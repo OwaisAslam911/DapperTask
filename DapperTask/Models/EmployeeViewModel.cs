@@ -13,5 +13,7 @@
         public string PositionTitle { get; set; }  // Additional info for displaying
         public string DepartmentName { get; set; }
         public string OrganizationName { get; set; }
+        public int AverageSalary { get; set; }
+
     }
 }
