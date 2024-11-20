@@ -28,6 +28,8 @@ namespace DapperTask.Controllers
             this.configuration = configuration;
         }
 
+        
+
         public IActionResult Dashboard()
         {
             var connectionString = configuration.GetConnectionString("dbcs");
@@ -41,6 +43,7 @@ namespace DapperTask.Controllers
                 // Extract names and salaries to separate lists
                 ViewBag.EmployeeNames = topEmployees.Select(e => e.EmployeeName).ToList();
                 ViewBag.EmployeeSalaries = topEmployees.Select(e => e.Salary).ToList();
+             
 
 
                 
@@ -137,19 +140,33 @@ namespace DapperTask.Controllers
 
         public JsonResult deleteOrganization(int OrganizationId)
         {
-            var connectionString = configuration.GetConnectionString("dbcs");
-
-            using (IDbConnection db = new SqlConnection(connectionString))
+            try
             {
-                //var check = "select * from PositionMapping Where OrganizationId = @OrganizationId";
+                var connectionString = configuration.GetConnectionString("dbcs");
+
+                using (IDbConnection db = new SqlConnection(connectionString))
+                {
+                    //var check = "select * from PositionMapping Where OrganizationId = @OrganizationId";
 
 
-                string deleteQuery = "DELETE FROM Organizations WHERE OrganizationId = @OrganizationId";
-                
-                db.Execute(deleteQuery, new { OrganizationId });
+                    string deleteQuery = "DELETE FROM Organizations WHERE OrganizationId = @OrganizationId";
 
-                return Json(new { success = true });
+                    db.Execute(deleteQuery, new { OrganizationId });
+
+                    return Json(new { success = true });
+                }
             }
+            catch (SqlException x)
+            {
+                if (x.ErrorCode == 1452)
+                {
+                    return Json(new { success = false, message = "Organization is already in use" });
+                }
+                else { 
+                return Json(new { success = false, message = x.Message });
+                }
+            }
+          
         }
 
 
@@ -234,15 +251,33 @@ namespace DapperTask.Controllers
         [HttpPost]
         public JsonResult DeleteDepartment(int DepartmentId)
         {
-            var connectionString = configuration.GetConnectionString("dbcs");
-
-            using (IDbConnection db = new SqlConnection(connectionString))
+            try
             {
-                string deleteQuery = "DELETE FROM Departments WHERE DepartmentId = @DepartmentId";
-                db.Execute(deleteQuery, new { DepartmentId });
+                var connectionString = configuration.GetConnectionString("dbcs");
 
-                return Json(new { success = true });
+                using (IDbConnection db = new SqlConnection(connectionString))
+                {
+                    string deleteQuery = "DELETE FROM Departments WHERE DepartmentId = @DepartmentId";
+                    db.Execute(deleteQuery, new { DepartmentId });
+
+                    return Json(new { success = true });
+                }
             }
+            catch (SqlException x)
+            {
+                if(x.ErrorCode == 1451)
+                {
+                    return Json(new { success = false, message ="THis department is in use " });
+                }
+                else
+                {
+                    return Json(new { success = false, message ="this department is in use" });
+
+                }
+
+                throw;
+            }
+            
         }
 
 
@@ -327,16 +362,85 @@ namespace DapperTask.Controllers
         [HttpPost]
         public JsonResult DeletePosition(int positionId)
         {
-            var connectionString = configuration.GetConnectionString("dbcs");
-
-            using (IDbConnection db = new SqlConnection(connectionString))
+            try
             {
-                string deleteQuery = "DELETE FROM Positions WHERE PositionId = @PositionId";
-                db.Execute(deleteQuery, new { PositionId = positionId });
+                var connectionString = configuration.GetConnectionString("dbcs");
 
-                return Json(new { success = true });
+                using (IDbConnection db = new SqlConnection(connectionString))
+                {
+                    string deleteQuery = "DELETE FROM Positions WHERE PositionId = @PositionId";
+                    db.Execute(deleteQuery, new { PositionId = positionId });
+
+                    return Json(new { success = true });
+                }
+            }
+            catch (SqlException x)
+            {
+                if(x.ErrorCode == 1451)
+                {
+                    return Json(new { success = false, message="This position is in use" });
+
+                }
+                else
+                {
+
+                    return Json(new { success = false, message="This position is in use" });
+                }
+                throw;
+            }
+      
+        }
+        public async Task<IActionResult> GetOrganizations()
+        {
+            using (IDbConnection db = new SqlConnection(configuration.GetConnectionString("dbcs")))
+            {
+                string sql = "SELECT * FROM Organizations";
+                var organizations = await db.QueryAsync<Organizations>(sql);
+                ViewBag.Organizations = organizations;
+
+                return View();
             }
         }
+
+        [HttpGet]
+        public JsonResult GetDepartments(int organizationId)
+        {
+            var connectionString = configuration.GetConnectionString("dbcs");
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+                // Query to fetch departments based on the selected organization
+                string query = @"
+            SELECT d.DepartmentId, d.DepartmentName 
+            FROM Departments d
+            INNER JOIN PositionMapping pm ON d.DepartmentId = pm.DepartmentId
+            WHERE pm.OrganizationId = @OrganizationId";
+
+                var departments = db.Query<Departments>(query, new { OrganizationId = organizationId }).ToList();
+                return Json(departments);
+            }
+        }
+
+
+   [HttpGet]
+public JsonResult GetPositions(int organizationId, int departmentId)
+{
+    var connectionString = configuration.GetConnectionString("dbcs");
+    using (IDbConnection db = new SqlConnection(connectionString))
+    {
+        // Query to fetch positions based on the selected organization and department
+        var query = @"
+            SELECT p.PositionId, p.PositionTitle 
+            FROM Positions p
+            INNER JOIN PositionMapping pm ON p.PositionId = pm.PositionId
+            WHERE pm.OrganizationId = @OrganizationId AND pm.DepartmentId = @DepartmentId";
+
+        // Execute the query with the provided organizationId and departmentId
+        var positions = db.Query<Positions>(query, new { OrganizationId = organizationId, DepartmentId = departmentId }).ToList();
+
+        return Json(positions);
+    }
+}
+
         [HttpGet]
         public IActionResult GetEmployees()
         {
@@ -443,8 +547,8 @@ namespace DapperTask.Controllers
             INNER JOIN Organizations o ON e.OrganizationId = o.OrganizationId";
                 var items = db.Query<EmployeeViewModel>(query);
 
-                ViewBag.Positions = db.Query<Positions>("SELECT * FROM Positions").ToList();
-                ViewBag.Departments = db.Query<Departments>("SELECT * FROM Departments").ToList();
+                //ViewBag.Positions = db.Query<Positions>("SELECT * FROM Positions").ToList();
+                //ViewBag.Departments = db.Query<Departments>("SELECT * FROM Departments").ToList();
                 ViewBag.Organizations = db.Query<Organizations>("SELECT * FROM Organizations").ToList();
 
                 return View(items);
@@ -502,7 +606,6 @@ namespace DapperTask.Controllers
         }
 
 
-
         [HttpPost]
         public JsonResult DeleteEmployee(int employeeId)
         {
@@ -517,6 +620,9 @@ namespace DapperTask.Controllers
             }
         }
 
+
+
+        
 
         public IActionResult PositionMapping()
         {
@@ -631,138 +737,42 @@ namespace DapperTask.Controllers
         [HttpPost]
         public JsonResult UpdateMapping(int postMapId, int positionId, int organizationId, int departmentId)
         {
-            var connectionString = configuration.GetConnectionString("dbcs");
-
-            using (IDbConnection db = new SqlConnection(connectionString))
+            try
             {
-                string checkDeptQuery = "SELECT COUNT(*) FROM PositionMapping WHERE PositionId = @PositionId And DepartmentId = @DepartmentId And OrganizationId = @OrganizationId";
-                var existingCount = db.ExecuteScalar<int>(checkDeptQuery, new { postMapId, positionId, organizationId, departmentId });
 
-                if (existingCount > 0)
+                var connectionString = configuration.GetConnectionString("dbcs");
+
+                using (IDbConnection db = new SqlConnection(connectionString))
                 {
-                    // Return an error response if the department already exists
-                    return Json(new { success = false, message = "Mapping already exists." });
-                }
 
-                string updateQuery = @"
+
+                    string updateQuery = @"
                 UPDATE PositionMapping 
                 SET PositionId = @positionId, OrganizationId = @organizationId, DepartmentId = @departmentId
                 WHERE PostMapId = @PostMapId";
 
-                db.Execute(updateQuery, new { PostMapId = postMapId, PositionId = positionId, OrganizationId = organizationId, DepartmentId = departmentId });
+                    db.Execute(updateQuery, new { PostMapId = postMapId, PositionId = positionId, OrganizationId = organizationId, DepartmentId = departmentId });
 
-                return Json(new { success = true });
+                    return Json(new { success = true });
+                }
+            }
+            catch (SqlException x)
+            {
+                if(x.ErrorCode ==1452){
+                    return Json(new { success = false, message="Position Mapping already in use" });
+
+                }
+                else
+                {
+                    return Json(new { success = false, message=x.Message});
+
+                }
+                throw;
             }
         }
 
 
-        //public async Task<IActionResult> Filter()
-        //{
-        //    var connectionString = configuration.GetConnectionString("dbcs");
-        //    using (IDbConnection db = new SqlConnection(connectionString))
-        //    {
-        //        var organizations = await db.QueryAsync<Organizations>("SELECT * FROM Organizations");
-        //        var departments = await db.QueryAsync<Departments>("SELECT * FROM Departments");
-        //        var positions = await db.QueryAsync<Positions>("SELECT * FROM Positions");
-
-        //        var defaultValues = await db.QueryAsync<dynamic>(@"
-        //    WITH RankedSalaries AS (
-        //        SELECT 
-        //            o.OrganizationName,
-        //            d.DepartmentName,
-        //            e.EmployeeName,
-        //            p.PositionTitle,
-        //            e.Salary,
-        //            ROW_NUMBER() OVER (PARTITION BY o.OrganizationId ORDER BY e.Salary DESC) AS SalaryRank
-        //        FROM Employees e
-        //        JOIN Positions p ON e.PositionId = p.PositionId
-        //        JOIN Departments d ON p.DepartmentId = d.DepartmentId
-        //        JOIN Organizations o ON e.OrganizationId = o.OrganizationId
-        //    )
-        //    SELECT 
-        //        PositionTitle,
-        //        OrganizationName,
-        //        DepartmentName,
-        //        EmployeeName,
-        //        Salary
-        //    FROM RankedSalaries
-        //    WHERE SalaryRank <= 2
-        //    ORDER BY OrganizationName, Salary DESC;");
-
-
-        //        // Pass data to the view using ViewBag
-        //        ViewBag.Organizations = new SelectList(organizations, "OrganizationId", "OrganizationName");
-        //        ViewBag.Departments = new SelectList(departments, "DepartmentId", "DepartmentName");
-        //        ViewBag.Positions = new SelectList(positions, "PositionId", "PositionTitle");
-        //        ViewBag.defaultValues = defaultValues;
-
-        //        return View();
-        //    }
-        //}
-
-
-        //[HttpGet]
-        //public JsonResult FilterEmployees(int? organizationId, int? departmentId, int? positionId)
-        //{
-        //    var connectionString = configuration.GetConnectionString("dbcs");
-        //    using (IDbConnection db = new SqlConnection(connectionString))
-        //    {
-        //        // Base SQL query
-        //        var sql = @"
-        //    SELECT 
-        //        e.EmployeeId,
-        //        e.EmployeeName, 
-        //        e.Salary,
-        //        o.OrganizationName, 
-        //        d.DepartmentName, 
-        //        p.PositionTitle 
-        //    FROM 
-        //        Employees AS e
-        //    JOIN 
-        //        Organizations AS o ON e.OrganizationId = o.OrganizationId
-        //    JOIN 
-        //        Departments AS d ON e.DepartmentId = d.DepartmentId
-        //    JOIN 
-        //        Positions AS p ON e.PositionId = p.PositionId
-        //    WHERE 
-        //        (1=1)";
-        //        var parameters = new DynamicParameters();
-
-        //        // Filter based on optional parameters
-        //        if (organizationId.HasValue)
-        //        {
-        //            sql += " AND o.OrganizationId = @OrganizationId";
-        //            parameters.Add("@OrganizationId", organizationId.Value);
-        //        }
-        //        if (departmentId.HasValue)
-        //        {
-        //            sql += " AND d.DepartmentId = @DepartmentId";
-        //            parameters.Add("@DepartmentId", departmentId.Value);
-        //        }
-        //        if (positionId.HasValue)
-        //        {
-        //            sql += " AND e.PositionId = @PositionId";
-        //            parameters.Add("@PositionId", positionId.Value);
-        //        }
-
-        //        // Group by the necessary fields
-        //        sql += @"
-        //    GROUP BY 
-        //        e.EmployeeId,
-        //        e.Salary,
-        //        e.EmployeeName, 
-        //        o.OrganizationName, 
-        //        d.DepartmentName, 
-        //        p.PositionTitle;
-        //";
-
-        //        // Execute the query
-        //        var filteredEmployees = db.Query<Employees>(sql, parameters).ToList();
-        //        return Json(filteredEmployees);
-        //    }
-        //}
-
-
+   
         public async Task<IActionResult> Filter()
         {
 
