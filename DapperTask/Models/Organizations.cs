@@ -17,3 +17,8 @@
         public List<Departments> Departments { get; set; }
     }
 }
+public class OrganizationViewModel
+{
+    public int OrganizationId { get; set; }
+    public string OrganizationName { get; set; }
+}

@@ -14,6 +14,7 @@
         public string DepartmentName { get; set; }
         public string OrganizationName { get; set; }
         public int AverageSalary { get; set; }
+        public int Gender { get; set; }
 
     }
 }
