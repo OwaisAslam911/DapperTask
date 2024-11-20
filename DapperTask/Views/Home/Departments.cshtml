@@ -49,6 +49,9 @@
     <script>
 
         $(document).ready(function () {
+
+
+
             $('#departmentForm').submit(function (event) {
                 event.preventDefault(); // Prevent the default form submission
 
@@ -80,6 +83,10 @@
                 });
             });
         });
+
+
+
+
 
         function editDepartment(departmentId) {
             document.getElementById('name-' + departmentId).style.display = 'none';
@@ -115,6 +122,8 @@
                 $.post('@Url.Action("DeleteDepartment", "Home")', { DepartmentId: departmentId }, function (response) {
                     if (response.success) {
                         $('#row-' + departmentId).remove();
+                    }else{
+                        alert(response.message);
                     }
                 });
             }

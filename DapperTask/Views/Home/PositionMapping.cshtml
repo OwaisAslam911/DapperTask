@@ -17,12 +17,12 @@
   <option selected>Select Positions</option>
 </select> 
 
-    <button type="submit" class="btn btn-primary">Add Mapping</button>
+    <button type="submit" class="btn btn-primary" id="addButton">Add Mapping</button>
         <button type="button" class="btn btn-secondary" id="updateButton" style="display:none;">Update</button>
 </form>
 </div>
 
-    <table class="table" >
+    <table class="table" id="PositionDataTable" >
      <thead>
 
      <tr>
@@ -48,6 +48,7 @@
         // Call the fetch function on page load
         var actionUrl = '@Url.Action("GetPositionMappings", "Home")';
         fetchPositionMappings(actionUrl);
+
     });
     // Function to fetch position mappings
     function fetchPositionMappings(actionUrl) {
@@ -75,6 +76,35 @@
 
                                 `);
                 });
+                     $('#PositionDataTable').DataTable({
+                         searching: true,
+                           orderCellsTop: true,
+                    fixedHeader: true,
+                         dom: 'lrtip',
+                         
+                initComplete: function () {
+                        
+                    this.api().columns().every(function () {
+                        var column = this;
+                        var header = $(column.header());
+                        var title = header.text().trim();
+                        var searchInput = $('<input>', {
+                            type: 'text',
+                            placeholder: `Search ${title}`,
+                            class: 'form-control form-control-sm'
+                        }).appendTo(header).on('keyup', function () {
+                            column.search($(this).val()).draw();
+                        });
+                    });
+
+                },
+
+//https://datatables.net/release-datatables/extensions/FixedHeader/examples/options/columnFiltering.html
+                
+                "search": {
+                    "caseInsensitive": true
+                }
+            });
             },
             error: function (error) {
                 console.error("Error fetching position mappings:", error);
@@ -139,6 +169,7 @@
         $('#PositionId').val(showpost);
 
         $('#updateButton').show(); 
+        $('#addButton').hide(); 
     });
 
     $('#updateButton').click(function () {
@@ -163,6 +194,7 @@
                 $('#positionMappingForm')[0].reset();
                 currentEditId = null; // Reset current edit ID
                 $('#updateButton').hide(); // Hide update button
+                $('#addButton').show(); // Hide update button
                 fetchPositionMappings('@Url.Action("GetPositionMappings", "Home")');
             } else {
                 alert(response.message);
@@ -172,3 +204,6 @@
 
 
 </script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>

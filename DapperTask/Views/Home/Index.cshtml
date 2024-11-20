@@ -179,6 +179,8 @@
                 $.post('@Url.Action("deleteOrganization", "Home")', { OrganizationId: organizationId }, function (response) {
                     if (response.success) {
                         $('#row-' + organizationId).remove();
+                    } else {
+                        alert(response.message)
                     }
                 });
             }

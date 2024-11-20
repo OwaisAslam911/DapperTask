@@ -3,26 +3,38 @@
         width: 100%; /* Full width of the parent container */
         height: auto; /* Auto height to maintain aspect ratio */
         max-width: 400px; /* Max width if you want to limit it */
-    }</style>
+    }
+   
+
+</style>
 @{
     ViewData["Title"] = "Dashboard";
 }
+    <div class="container">
 <div class="content-body">
-
     <h1>Dashboard</h1>
 
     <div>
+        
         <canvas id="myChart"></canvas>
     </div>
 
 
+        <div>
+            <h2>line chart</h2>
+            <canvas id="lineChart"></canvas>
+        </div>
+
 
     <div class="myPieChart" >
     <h2>Employee Distribution by Position</h2>
-        <canvas  id="myPieChart"></canvas>
+            <canvas id="myPieChart" width="400" height="200"></canvas>
+    </div>
+
+
+       
 </div>
  </div >
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
@@ -115,3 +127,39 @@
         }
     });
 </script>
+<script>
+    const lineCtx = document.getElementById('lineChart').getContext('2d');
+    new Chart(lineCtx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Salary',
+                data: data,
+                borderWidth: 2,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Salary'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Employee Names'
+                    }
+                }
+            }
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+

@@ -34,14 +34,14 @@
         </div>
     </form>
 
-    <!-- Table to display employees -->
+   
     <table id="employeeTable" class="table">
         <thead>
             <tr>
                 <th>Organization</th>
                 <th>Department</th>
                 <th>Position</th>
-                @* <th>Employee Name</th> *@
+               
                 <th>Salary</th>
             </tr>
         </thead>
@@ -62,11 +62,11 @@
             url: actionUrl,
             method: 'GET',
             success: function (data) {
-                debugger;
-                // Clear existing table rows
+               
+    
                 $('#FilterTableBody').empty();
-                debugger;
-                // Populate the table with retrieved data
+               
+               
                 data.forEach(function (filter) {
                     $('#FilterTableBody').append(`
                                             <tr id="trtag_${filter.PostMapId}">

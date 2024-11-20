@@ -108,6 +108,8 @@
                 $.post('@Url.Action("DeletePosition", "Home")', { PositionId: PositionId }, function (response) {
                     if (response.success) {
                         $('#row-' + PositionId).remove();
+                    }else{
+                        alert(response.message);
                     }
                 });
             }
