@@ -56,7 +56,66 @@
     $(document).ready(function (){
         var actionUrl = '@Url.Action("GetFilter", "Home")';
         fetchData(actionUrl);
+        $('#OrganizationId').change(function () {
+            var organizationId = $(this).val();
+            if (organizationId) {
+                fetchDepartments(organizationId);
+            } else {
+                // Reset department and position dropdowns if no organization is selected
+                $('#DepartmentId').empty().append('<option selected value="">Select Department</option>');
+                $('#PositionId').empty().append('<option selected value="">Select Position</option>');
+            }
+        });
+        $('#DepartmentId').change(function () {
+            var departmentId = $(this).val();
+            var organizationId = $('#OrganizationId').val(); // Get selected organization
+
+            if (departmentId) {
+                fetchPositions(organizationId, departmentId);
+            } else {
+                $('#PositionId').empty().append('<option selected value="">Select Position</option>');
+            }
+        });
+
     });
+    function fetchDepartments(organizationId) {
+        $.ajax({
+            url: '@Url.Action("GetDepartments", "Home")', // Adjust as necessary
+            method: 'GET',
+            data: { organizationId: organizationId },
+            success: function (data) {
+                // Clear and populate the department dropdown
+                $('#DepartmentId').empty().append('<option selected value="">Select Department</option>');
+                data.forEach(function (department) {
+                    $('#DepartmentId').append(`<option value="${department.departmentId}">${department.departmentName}</option>`);
+                });
+                // Clear positions dropdown
+                $('#PositionId').empty().append('<option selected value="">Select Position</option>');
+            },
+            error: function (error) {
+                console.error("Error fetching departments:", error);
+            }
+        });
+    }
+
+    function fetchPositions(organizationId, departmentId) {
+        $.ajax({
+            url: '@Url.Action("GetPositions", "Home")', // Adjust as necessary
+            method: 'GET',
+            data: { organizationId: organizationId, departmentId: departmentId },
+            success: function (data) {
+                // Clear and populate the position dropdown
+                $('#PositionId').empty().append('<option selected value="">Select Position</option>');
+                data.forEach(function (position) {
+                    $('#PositionId').append(`<option value="${position.positionId}">${position.positionTitle}</option>`);
+                });
+            },
+            error: function (error) {
+                console.error("Error fetching positions:", error);
+            }
+        });
+    }
+
     function fetchData(actionUrl){
        $.ajax({
             url: actionUrl,
@@ -68,7 +127,7 @@
                
                
                 data.forEach(function (filter) {
-                    $('#FilterTableBody').append(`
+                    $('#FilterTableBody').append(`z
                                             <tr id="trtag_${filter.PostMapId}">
                                                  <td>${filter.organizationName}</td>
                                                  <td>${filter.departmentName}</td>

@@ -1,4 +1,5 @@
-﻿@model IEnumerable<DapperTask.Models.PositionMappingViewModel>
+﻿﻿
+@model IEnumerable<DapperTask.Models.PositionMappingViewModel>
 <div class="content-body">
 
 <div class="container">
@@ -43,11 +44,14 @@
 <script>
     $(document).ready(function () {
         // Define the URL for the AJAX call
-    
+        $(function () {
+            $("#OrganizationId").Select2();
+        })
 
         // Call the fetch function on page load
         var actionUrl = '@Url.Action("GetPositionMappings", "Home")';
         fetchPositionMappings(actionUrl);
+
 
     });
     // Function to fetch position mappings
