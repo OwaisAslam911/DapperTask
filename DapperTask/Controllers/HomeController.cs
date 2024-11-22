@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.Web.CodeGeneration.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.CodeAnalysis;
 
 
 
@@ -28,7 +29,83 @@ namespace DapperTask.Controllers
             this.configuration = configuration;
         }
 
-        
+        public IActionResult Signup()
+        {
+            return View();
+        }
+        [HttpPost]
+        public IActionResult Signup(string userName, string userEmail, string userPassword)
+        {
+            var connectionString = configuration.GetConnectionString("dbcs");
+
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+                var checkname = "Select * from Users Where UserName = @UserName";
+                var existingCount = db.ExecuteScalar<int>(checkname, new { userName });
+                var checkemail = "Select * from Users Where UserEmail = @UserEmail";
+                var emailcount = db.ExecuteScalar<int>(checkemail, new {  userEmail });
+           
+               
+                string query = "Insert into Users (UserName, UserEmail, UserPassword) Values(@UserName, @UserEmail, @UserPassword)";
+                if (existingCount > 0)
+                {
+                    return Json(new { success = false, message = "UserName already exists." });
+                }
+                else if (emailcount > 0)
+                {
+                    return Json(new { success = false, message = "Email already exists." });
+                }
+                var newUser = db.Query(query, new { userName, userEmail, userPassword });
+
+                // Return a success response with the new organization's details
+                return Json(new { success = true, message = "Signup successful! Welcome, " + userName + "!" });
+            }
+            
+        } 
+
+        public IActionResult Login()
+        {
+            return View();
+        }
+        [HttpPost]
+          public IActionResult Login(Users model,string userName, string userEmail, string userPassword)
+        {
+             
+            var connectionString = configuration.GetConnectionString("dbcs");
+
+            using (IDbConnection db = new SqlConnection(connectionString))
+            {
+                var checkname = "Select * from Users Where UserName = @UserName";
+                var existingCount = db.ExecuteScalar<int>(checkname, new { userName });
+                var checkemail = "Select * from Users Where UserEmail = @UserEmail";
+                var emailcount = db.ExecuteScalar<int>(checkemail, new { userEmail });
+                if (existingCount == 0)
+                {
+                    return Json(new { success = false, message = "UserName Doesn't exists." });
+                }
+              
+
+                string query = "Select * from Users Where UserName = @UserName  And UserPassword = @UserPassword";
+                var user = db.QuerySingleOrDefault<Users>(query, new { UserName = userName, UserPassword = userPassword });
+
+                // Check if the user was found
+                if (user != null)
+                {
+                    // Authentication successful, set session
+                    HttpContext.Session.SetString("UserEmail", user.UserEmail);
+                    HttpContext.Session.SetString("UserName", user.UserName);
+
+                    // Return a success response
+                    return Json(new { success = true, message = "Login successful!" });
+                }
+                else 
+                {
+                    return Json(new { success = false, message = "Invalid login attempt." });
+                }
+            }
+
+            return Json(new { success = false, message = "An error occurred during login." });
+        }
 
         public IActionResult Dashboard()
         {
