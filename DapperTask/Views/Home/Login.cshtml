@@ -1,0 +1,62 @@
+﻿@model DapperTask.Models.Users
+@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="content-body">
+    <div class="form" style="width:400px;">
+        <div class="container">
+
+
+            <form method="post" id="LoginForm">
+                <div class="mb-3">
+                    <label for="exampleInputEmail1" class="form-label">User Name</label>
+                    <input type="text" asp-for="UserName" id="userName" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+
+                </div>
+              
+                <div class="mb-3">
+                    <label for="exampleInputPassword1" class="form-label">Password</label>
+                    <input type="password" asp-for="UserPassword" id="userPassword" class="form-control" id="exampleInputPassword1">
+                </div>
+              
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+        </div>  
+        <p>
+            Don't Have any Account/<a asp-controller="Home" asp-action="Signup">Signup</a>
+        </p>
+    </div>
+</div>
+<script>
+ $(document).ready(function () {
+        $('#LoginForm').on('submit', function (event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            // Prepare the data to send
+            var formData = {
+                userName: $('#userName').val(),
+               
+                userPassword: $('#userPassword').val()
+            };
+
+            // Make an AJAX POST request
+            $.ajax({
+                type: 'POST',
+                url: '@Url.Action("Login", "Home")', // Update with your controller name
+                data: formData,
+                success: function (response) {
+                    // Check the response for success
+                    if (response.success) {
+                        toastr.success(response.message); // Show success message
+                    } else {
+                        toastr.error(response.message); // Show error message
+                    }
+                },
+                error: function () {
+                    toastr.error('An error occurred while processing your request.');
+                }
+            });
+        });
+    });
+</script>

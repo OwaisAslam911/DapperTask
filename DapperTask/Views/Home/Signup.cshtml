@@ -1,0 +1,73 @@
+﻿@model DapperTask.Models.Users
+@{
+    ViewData["Title"] = "Signup";
+}
+<!-- Include Toastr CSS -->
+
+
+<!-- Include jQuery (required for Toastr) -->
+
+
+<!-- Include Toastr JS -->
+
+
+<div class="content-body">
+        <div class="form" style="width:400px;">
+    <div class="container">
+
+        
+<form method="post" id="logForm">
+    <div class="mb-3">
+        <label for="exampleInputEmail1" class="form-label">User Name</label>
+                    <input type="text" asp-for="UserName" id="userName" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+        
+    </div>
+    <div class="mb-3">
+        <label for="exampleInputEmail1" class="form-label">Email address</label>
+                    <input type="email" asp-for="UserEmail" id="userEmail" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+        <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
+    </div>
+    <div class="mb-3">
+        <label for="exampleInputPassword1" class="form-label">Password</label>
+                    <input type="password" asp-for="UserPassword" id="userPassword" class="form-control" id="exampleInputPassword1">
+    </div>
+   
+    <button type="submit" class="btn btn-primary">Signup</button>
+</form>
+        </div>
+        <p>Already Have an account <a asp-controller="Home" asp-action="Login">Login</a></p>
+</div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#signupForm').on('submit', function (event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            // Prepare the data to send
+            var formData = {
+                userName: $('#userName').val(),
+                userEmail: $('#userEmail').val(),
+                userPassword: $('#userPassword').val()
+            };
+
+            // Make an AJAX POST request
+            $.ajax({
+                type: 'POST',
+                url: '@Url.Action("Signup", "Home")', // Update with your controller name
+                data: formData,
+                success: function (response) {
+                    // Check the response for success
+                    if (response.success) {
+                        toastr.success(response.message); // Show success message
+                    } else {
+                        toastr.error(response.message); // Show error message
+                    }
+                },
+                error: function () {
+                    toastr.error('An error occurred while processing your request.');
+                }
+            });
+        });
+    });
+</script>
