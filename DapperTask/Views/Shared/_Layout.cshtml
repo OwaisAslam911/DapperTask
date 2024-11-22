@@ -9,6 +9,8 @@
 
     <!-- theme meta -->
     <meta name="theme-name" content="quixlab" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
     <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.css" />
     <title>Quixlab - Bootstrap Admin Dashboard Template by Themefisher.com</title>
 
@@ -22,6 +24,7 @@
     <link href="~/template/plugins/tables/css/datatable/dataTables.bootstrap4.min.css" rel="stylesheet">
     <!-- Custom Stylesheet -->
     <link href="~/template/css/style.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
 
 </head>
 
@@ -190,6 +193,19 @@
                                 </div>
                             </div>
                         </li>
+                        <li>
+                            <div class="d-flex">
+                                @if (Context.Session.GetString("mystring") != null)
+                                {
+                                    <p style="color:red;display:flex;">Hello @Context.Session.GetString("mystring")</p>
+                                    <a asp-controller="Home" asp-action="Logout" class="btn btn-outline-success">Logout</a>
+                                }
+                                else
+                                {
+                                    <a asp-controller="Home" asp-action="Login" class="btn btn-outline-success">Login</a>
+                                }
+                            </div>
+                        </li>
                         <li class="icons dropdown d-none d-md-flex">
                             <a href="javascript:void(0)" class="log-user" data-toggle="dropdown">
                                 <span>English</span>  <i class="fa fa-angle-down f-s-14" aria-hidden="true"></i>
@@ -263,6 +279,12 @@
                     <li class="nav-label">
                         <a asp-controller="Home" asp-action="Filter">Filter</a>
                     </li>
+                    <li class="nav-label">
+                        <a asp-controller="Home" asp-action="Signup">Signup</a>
+                    </li>
+                    <li class="nav-label">
+                        <a asp-controller="Home" asp-action="Login">Login</a>
+                    </li>
 
                     </ul>                  
             </div>
@@ -311,6 +333,7 @@
     <script src="~/template/plugins/tables/js/jquery.dataTables.min.js"></script>
     <script src="~/template/plugins/tables/js/datatable/dataTables.bootstrap4.min.js"></script>
     <script src="~/template/plugins/tables/js/datatable-init/datatable-basic.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 </body>
 
 </html>
