@@ -12,8 +12,9 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.CodeAnalysis;
-
-
+using System.Text;
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.Identity;
 
 
 namespace DapperTask.Controllers
@@ -28,83 +29,121 @@ namespace DapperTask.Controllers
             _logger = logger;
             this.configuration = configuration;
         }
+        //public static string HashPassword(string password)
+        //{
+        //    using (var sha256 = SHA256.Create())
+        //    {
+        //        // Send a sample text to hash.  
+        //        var hashedPassword = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+        //        // Get the hashed string.  
+        //        var hash = BitConverter.ToString(hashedPassword).Replace("-", "").ToLower();
+        //        // Print the string.   
+        //        Console.WriteLine(hash);
+        //        return (hash);
+        //    }
+        //}
 
+        // Signup Action
         public IActionResult Signup()
         {
             return View();
         }
+
         [HttpPost]
-        public IActionResult Signup(string userName, string userEmail, string userPassword)
+        public JsonResult Signup(string userName, string userEmail, string userPassword)
         {
             var connectionString = configuration.GetConnectionString("dbcs");
 
             using (IDbConnection db = new SqlConnection(connectionString))
             {
-                var checkname = "Select * from Users Where UserName = @UserName";
-                var existingCount = db.ExecuteScalar<int>(checkname, new { userName });
-                var checkemail = "Select * from Users Where UserEmail = @UserEmail";
-                var emailcount = db.ExecuteScalar<int>(checkemail, new {  userEmail });
-           
-               
-                string query = "Insert into Users (UserName, UserEmail, UserPassword) Values(@UserName, @UserEmail, @UserPassword)";
+                // Check for existing username
+                var existingUserQuery = "SELECT COUNT(*) FROM Users WHERE UserName = @UserName";
+                var existingCount = db.ExecuteScalar<int>(existingUserQuery, new { userName });
+
+                // Check for existing email
+                var existingEmailQuery = "SELECT COUNT(*) FROM Users WHERE UserEmail = @UserEmail";
+                var emailCount = db.ExecuteScalar<int>(existingEmailQuery, new { userEmail });
+
                 if (existingCount > 0)
                 {
                     return Json(new { success = false, message = "UserName already exists." });
                 }
-                else if (emailcount > 0)
+                else if (emailCount > 0)
                 {
                     return Json(new { success = false, message = "Email already exists." });
                 }
-                var newUser = db.Query(query, new { userName, userEmail, userPassword });
 
-                // Return a success response with the new organization's details
+                // Hash the password before storing
+                string hashedPassword =NewFolder.hashing.HashPassword(userPassword);
+                string insertUserQuery = "INSERT INTO Users (UserName, UserEmail, UserPassword) VALUES (@UserName, @UserEmail, @UserPassword)";
+                db.Execute(insertUserQuery, new { userName, userEmail, userPassword = hashedPassword });
+
                 return Json(new { success = true, message = "Signup successful! Welcome, " + userName + "!" });
             }
-            
-        } 
+        }
 
+        // Login Action
         public IActionResult Login()
         {
             return View();
         }
+
         [HttpPost]
-          public IActionResult Login(Users model,string userName, string userEmail, string userPassword)
+        public JsonResult Login(string userName, string userPassword)
         {
-             
             var connectionString = configuration.GetConnectionString("dbcs");
 
             using (IDbConnection db = new SqlConnection(connectionString))
             {
-                var checkname = "Select * from Users Where UserName = @UserName";
-                var existingCount = db.ExecuteScalar<int>(checkname, new { userName });
-                var checkemail = "Select * from Users Where UserEmail = @UserEmail";
-                var emailcount = db.ExecuteScalar<int>(checkemail, new { userEmail });
+                // Check if the user exists
+                var existingUserQuery = "SELECT COUNT(*) FROM Users WHERE UserName = @UserName";
+                var existingCount = db.ExecuteScalar<int>(existingUserQuery, new { userName });
+
                 if (existingCount == 0)
                 {
-                    return Json(new { success = false, message = "UserName Doesn't exists." });
+                    return Json(new { success = false, message = "UserName doesn't exist." });
                 }
-              
 
-                string query = "Select * from Users Where UserName = @UserName  And UserPassword = @UserPassword";
-                var user = db.QuerySingleOrDefault<Users>(query, new { UserName = userName, UserPassword = userPassword });
+                // Hash the entered password for verification
+                string hashedEnteredPassword = NewFolder.hashing.HashPassword(userPassword);
 
-                // Check if the user was found
+                // Check if the hashed password matches the stored password
+                var userQuery = "SELECT * FROM Users WHERE UserName = @UserName AND UserPassword = @UserPassword";
+                var user = db.QuerySingleOrDefault<Users>(userQuery, new { userName, UserPassword = hashedEnteredPassword });
+
                 if (user != null)
                 {
                     // Authentication successful, set session
                     HttpContext.Session.SetString("UserEmail", user.UserEmail);
                     HttpContext.Session.SetString("UserName", user.UserName);
-
-                    // Return a success response
                     return Json(new { success = true, message = "Login successful!" });
                 }
-                else 
+                else
                 {
                     return Json(new { success = false, message = "Invalid login attempt." });
                 }
             }
 
             return Json(new { success = false, message = "An error occurred during login." });
+        }
+    
+
+    [HttpGet]
+        public IActionResult Logout()
+        {
+            var connectionString = configuration.GetConnectionString("dbcs");
+
+            using (IDbConnection db = new SqlConnection(connectionString))
+            { 
+                if (HttpContext.Session.GetString("UserName")!= null)
+                {
+                    HttpContext.Session.Clear();
+                    HttpContext.Session.Remove("UserName");
+                    return RedirectToAction("Login");
+                }
+               
+            }
+            return Json(new { success = false, message = "An error occurred during Logout." });
         }
 
         public IActionResult Dashboard()
@@ -113,6 +152,11 @@ namespace DapperTask.Controllers
 
             using (IDbConnection db = new SqlConnection(connectionString))
             {
+                var session = HttpContext.Session.GetString("UserName");
+               if(session != null)
+                {
+
+                
                 // Query to select the top 5 employees based on salary
                 var Salaryquery = "SELECT TOP 5 EmployeeName, Salary FROM Employees ORDER BY Salary DESC;";
                 var topEmployees = db.Query<DapperTask.Models.Employees>(Salaryquery).ToList();
@@ -131,6 +175,11 @@ namespace DapperTask.Controllers
                 ViewBag.Positions = positionData.Select(p => (int)p.PositionId).ToList();
                 ViewBag.EmployeeCounts = positionData.Select(p => (int)p.EmployeeCount).ToList();
                 return View();
+                }
+                else
+                {
+                    return RedirectToAction("Login");
+                }
 
             }
         }
@@ -142,10 +191,18 @@ namespace DapperTask.Controllers
 
             using (IDbConnection db = new SqlConnection(connectionString))
             {
-                string query = "SELECT * from Organizations";
-                var organizations = db.Query<DapperTask.Models.Organizations>(query).ToList();
+                var session = HttpContext.Session.GetString("UserName");
+                if (session != null)
+                {
+                    string query = "SELECT * from Organizations";
+                    var organizations = db.Query<DapperTask.Models.Organizations>(query).ToList();
 
-                return View(organizations); // Pass DepartmentViewModel to the view
+                    return View(organizations);
+                }
+                else
+                {
+                    return RedirectToAction("Login");
+                }// Pass DepartmentViewModel to the view
             }
         }
         [HttpPost]
@@ -256,12 +313,20 @@ namespace DapperTask.Controllers
 
             using (IDbConnection db = new SqlConnection(connectionString))
             {
+                var session = HttpContext.Session.GetString("UserName");
+                if (session != null)
+                {
 
 
-                string query = "SELECT DepartmentId, DepartmentName FROM Departments";
-                var departments = db.Query<DapperTask.Models.DepartmentViewModel>(query).ToList();
+                    string query = "SELECT DepartmentId, DepartmentName FROM Departments";
+                    var departments = db.Query<DapperTask.Models.DepartmentViewModel>(query).ToList();
 
-                return View(departments); // Pass DepartmentViewModel to the view
+                    return View(departments);
+                }
+                else
+                {
+                    return RedirectToAction("Login");
+                }
             }
         }
         [HttpPost]
@@ -367,10 +432,18 @@ namespace DapperTask.Controllers
 
             using (IDbConnection db = new SqlConnection(connectionString))
             {
-                string query = "SELECT PositionId, PositionTitle FROM Positions";
-                var positions = db.Query<DapperTask.Models.PositionsViewModel>(query).ToList();
+                var session = HttpContext.Session.GetString("UserName");
+                if (session != null)
+                {
+                    string query = "SELECT PositionId, PositionTitle FROM Positions";
+                    var positions = db.Query<DapperTask.Models.PositionsViewModel>(query).ToList();
 
-                return View(positions);
+                    return View(positions);
+                }
+                else
+                {
+                    return RedirectToAction("Login");
+                }
             }
         }
         [HttpPost]
@@ -614,21 +687,28 @@ public JsonResult GetPositions(int organizationId, int departmentId)
             var connectionString = configuration.GetConnectionString("dbcs");
             using (IDbConnection db = new SqlConnection(connectionString))
             {
-
-                string query = @"
+                var session = HttpContext.Session.GetString("UserName");
+                if (session != null)
+                {
+                    string query = @"
             SELECT e.EmployeeId, e.EmployeeName, e.Email, e.Phone, e.Salary,
                    p.PositionTitle, d.DepartmentName, o.OrganizationName 
             FROM Employees e
             INNER JOIN Positions p ON e.PositionId = p.PositionId
             INNER JOIN Departments d ON e.DepartmentId = d.DepartmentId
             INNER JOIN Organizations o ON e.OrganizationId = o.OrganizationId";
-                var items = db.Query<EmployeeViewModel>(query);
+                    var items = db.Query<EmployeeViewModel>(query);
 
-                //ViewBag.Positions = db.Query<Positions>("SELECT * FROM Positions").ToList();
-                //ViewBag.Departments = db.Query<Departments>("SELECT * FROM Departments").ToList();
-                ViewBag.Organizations = db.Query<Organizations>("SELECT * FROM Organizations").ToList();
+                    //ViewBag.Positions = db.Query<Positions>("SELECT * FROM Positions").ToList();
+                    //ViewBag.Departments = db.Query<Departments>("SELECT * FROM Departments").ToList();
+                    ViewBag.Organizations = db.Query<Organizations>("SELECT * FROM Organizations").ToList();
 
-                return View(items);
+                    return View(items);
+                }
+                else
+                {
+                    return RedirectToAction("Login");
+                }
             }
 
 
@@ -705,16 +785,23 @@ public JsonResult GetPositions(int organizationId, int departmentId)
         {
             using (IDbConnection db = new SqlConnection(configuration.GetConnectionString("dbcs")))
             {
+                var session = HttpContext.Session.GetString("UserName");
+                if (session != null)
+                {
+                    var getOrganizations = db.Query<Organizations>("Select * from Organizations").ToList();
+                    ViewBag.OrganizationMapping = new SelectList(getOrganizations, "OrganizationId", "OrganizationName");
 
-                var getOrganizations = db.Query<Organizations>("Select * from Organizations").ToList();
-                ViewBag.OrganizationMapping = new SelectList(getOrganizations, "OrganizationId", "OrganizationName");
+                    var getDepartment = db.Query<Departments>("Select * from Departments").ToList();
+                    ViewBag.DepartmentMapping = new SelectList(getDepartment, "DepartmentId", "DepartmentName");
 
-                var getDepartment = db.Query<Departments>("Select * from Departments").ToList();
-                ViewBag.DepartmentMapping = new SelectList(getDepartment, "DepartmentId", "DepartmentName");
+                    var getPosition = db.Query<Positions>("Select * from Positions").ToList();
+                    ViewBag.PositionMapping = new SelectList(getPosition, "PositionId", "PositionTitle");
 
-                var getPosition = db.Query<Positions>("Select * from Positions").ToList();
-                ViewBag.PositionMapping = new SelectList(getPosition, "PositionId", "PositionTitle");
-
+                }
+                else
+                {
+                    return RedirectToAction("Login");
+                }
             }
             return View();
         }
@@ -855,15 +942,22 @@ public JsonResult GetPositions(int organizationId, int departmentId)
 
             using (IDbConnection db = new SqlConnection(configuration.GetConnectionString("dbcs")))
             {
+                var session = HttpContext.Session.GetString("UserName");
+                if (session != null)
+                {
 
+                    var organizations = await db.QueryAsync<Organizations>("SELECT * FROM Organizations");
+                    var departments = await db.QueryAsync<Departments>("SELECT * FROM Departments");
+                    var positions = await db.QueryAsync<Positions>("SELECT * FROM Positions");
 
-                var organizations = await db.QueryAsync<Organizations>("SELECT * FROM Organizations");
-                var departments = await db.QueryAsync<Departments>("SELECT * FROM Departments");
-                var positions = await db.QueryAsync<Positions>("SELECT * FROM Positions");
-
-                ViewBag.Organizations = new SelectList(organizations, "OrganizationId", "OrganizationName");
-                ViewBag.Departments = new SelectList(departments, "DepartmentId", "DepartmentName");
-                ViewBag.Positions = new SelectList(positions, "PositionId", "PositionTitle");
+                    ViewBag.Organizations = new SelectList(organizations, "OrganizationId", "OrganizationName");
+                    ViewBag.Departments = new SelectList(departments, "DepartmentId", "DepartmentName");
+                    ViewBag.Positions = new SelectList(positions, "PositionId", "PositionTitle");
+                }
+                else
+                {
+                    return RedirectToAction("Login");
+                }
             }
             return View();
         }
