@@ -9,8 +9,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 // Register repositories and inject the connection string for each
 
+//builder.Services.AddControllers()
+//           .AddJsonOptions(opts => opts.JsonSerializerOptions.PropertyNamingPolicy = null);
+builder.Services.AddSession(options =>
+{
+   
+    options.IdleTimeout = TimeSpan.FromMinutes(10);
+    options.Cookie.IsEssential = true;
+    options.Cookie.HttpOnly = true;
 
-
+});
 builder.Services.AddScoped<OrganizationRepository>(provider =>
     new OrganizationRepository(builder.Configuration.GetConnectionString("dbcs")));
 builder.Services.AddScoped<DepartmentRepository>(provider =>
@@ -30,6 +38,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseSession();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
