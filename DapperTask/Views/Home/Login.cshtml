@@ -1,9 +1,12 @@
 ﻿@model DapperTask.Models.Users
 @{
+    Layout = "LoginLayout";
     ViewData["Title"] = "Login";
 }
+<div class="pagecontent d-flex align-items-center justify-content-center" style="height: 100vh;">
 
-<div class="content-body">
+
+<div class=" d-flex align-item-center justify-content-center">
     <div class="form" style="width:400px;">
         <div class="container">
 
@@ -28,6 +31,10 @@
         </p>
     </div>
 </div>
+
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script>
  $(document).ready(function () {
         $('#LoginForm').on('submit', function (event) {
@@ -48,7 +55,12 @@
                 success: function (response) {
                     // Check the response for success
                     if (response.success) {
-                        toastr.success(response.message); // Show success message
+                        toastr.success(response.message);
+                        setTimeout(function () {
+                            window.location.href = '@Url.Action("Dashboard", "Home")';
+                        }, 1000);
+
+                        // Show success message
                     } else {
                         toastr.error(response.message); // Show error message
                     }

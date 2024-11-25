@@ -15,8 +15,8 @@
         <div class="form" style="width:400px;">
     <div class="container">
 
-        
-<form method="post" id="logForm">
+
+            <form method="post" id="signupForm">
     <div class="mb-3">
         <label for="exampleInputEmail1" class="form-label">User Name</label>
                     <input type="text" asp-for="UserName" id="userName" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
@@ -38,12 +38,16 @@
         <p>Already Have an account <a asp-controller="Home" asp-action="Login">Login</a></p>
 </div>
 </div>
-
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script>
+    
     $(document).ready(function () {
+       
         $('#signupForm').on('submit', function (event) {
+           
             event.preventDefault(); // Prevent the default form submission
-
+            
             // Prepare the data to send
             var formData = {
                 userName: $('#userName').val(),
@@ -54,14 +58,17 @@
             // Make an AJAX POST request
             $.ajax({
                 type: 'POST',
-                url: '@Url.Action("Signup", "Home")', // Update with your controller name
+                url: '@Url.Action("Signup", "Home")',
                 data: formData,
                 success: function (response) {
                     // Check the response for success
                     if (response.success) {
-                        toastr.success(response.message); // Show success message
+                        toastr.success(response.message);
+                        setTimeout(function () {
+                            window.location.href = '@Url.Action("Login", "Home")'; 
+                        }, 2000); 
                     } else {
-                        toastr.error(response.message); // Show error message
+                        toastr.error(response.message); 
                     }
                 },
                 error: function () {
@@ -70,4 +77,4 @@
             });
         });
     });
-</script>
+</script> 
